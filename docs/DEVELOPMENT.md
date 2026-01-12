@@ -101,33 +101,45 @@ src/
 2. Select an existing session
 3. Logs are loaded into the Selected panel
 4. Add/remove items, adjust times
-5. Press `c` to save changes
+5. Press `s` to save changes
 6. Delta detection: only changed items are updated
 
 ### Focus Areas & Keyboard Navigation
 
-Four focus areas cycle with Tab: `list` → `sessions` → `selected` → `search`
+Three panes: Library (with search), Sessions, Selected
 
 | Focus Area | Keys | Actions |
 |------------|------|---------|
 | Library | j/k, Space | Navigate, select/deselect items |
 | Sessions | j/k, Space | Navigate, switch session |
 | Selected | j/k, +/-, x | Navigate, adjust time, remove |
-| Search | typing | Filter library |
+| Search | typing, Esc | Filter library (inside Library pane) |
 
-Global: `Tab` (cycle focus), `Esc` (return to library), `c` (save), `r` (refresh)
+**Vim-style pane navigation:**
+- `Ctrl+h` - Move to pane on the left
+- `Ctrl+l` - Move to pane on the right
+- `Ctrl+k` - Jump to search
+- `Ctrl+j` - Jump from search back to list
+
+**Other shortcuts:**
+- `Tab` - Cycle focus through all areas
+- `Esc` - Return to library list
+- `/` - Quick jump to search
+- `s` - Save session
+- `r` - Refresh data from Notion
 
 ### Search
+- Search input is inside the Library pane (top)
 - Uses Fuse.js for fuzzy matching on name, artist, tags, type
 - `onInput` (not `onChange`) for live filtering as you type
 - Shows all items when search is empty
 
 ## Known Issues & Limitations
 
-### tmux Compatibility
-OpenTUI crashes with SIGBUS inside tmux. Workaround: run outside tmux.
+### tmux/Terminal Compatibility
+Previously experienced SIGBUS crashes, initially attributed to tmux + OpenTUI incompatibility.
 - GitHub issue: https://github.com/anomalyco/opentui/issues/490
-- Tried `useThread: false` but didn't help
+- **Update (2026-01-12)**: Crashes were likely caused by old Bun version (1.0.25). Upgrading to Bun 1.3.5 resolved the issue. May now work in tmux - needs testing.
 
 ### No Pagination in UI
 Shows max 20 items in library list, 10 sessions. Works fine for typical sizes but could add scrolling.
@@ -154,6 +166,14 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [ ] Quick-add from recent items
 
 ## Session Log
+
+### 2026-01-12: UX Improvements
+- Fixed SIGBUS crash by upgrading Bun from 1.0.25 to 1.3.5
+- Changed save shortcut from `c` to `s` (more intuitive)
+- Made save (`s`) and refresh (`r`) work globally from any pane
+- Stay in place after save instead of showing "done" screen
+- Moved search input inside Library pane (semantic grouping)
+- Added vim-style pane navigation: `Ctrl+h/l` for left/right, `Ctrl+k/j` for search/list
 
 ### 2026-01-12: Session Editing Feature
 - Added session selector panel showing recent sessions

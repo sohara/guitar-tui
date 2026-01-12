@@ -15,7 +15,7 @@ Read `docs/DEVELOPMENT.md` for:
 - Notion database structure and IDs
 - API v5 quirks (data source ID vs database ID)
 - Implementation details and architecture decisions
-- Known issues (tmux compatibility)
+- Known issues and requirements
 - Future improvement ideas
 
 ## Key Files
@@ -24,6 +24,7 @@ Read `docs/DEVELOPMENT.md` for:
 - `src/notion/client.ts` - Notion API functions
 - `src/config.ts` - Database/template IDs
 
-## Known Issue
+## Notes
 
-OpenTUI crashes inside tmux. Run outside tmux.
+- Requires Bun 1.3+ (older versions cause SIGBUS crashes)
+- tmux compatibility untested with newer Bun

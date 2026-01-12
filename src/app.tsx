@@ -17,7 +17,7 @@ import type {
 } from "./notion/types";
 import { config } from "./config";
 
-type AppState = "loading" | "browse" | "creating" | "saving" | "done" | "error";
+type AppState = "loading" | "browse" | "creating" | "saving" | "error";
 type FocusArea = "search" | "list" | "sessions" | "selected";
 
 export function App() {
@@ -36,6 +36,7 @@ export function App() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [sessionCursorIndex, setSessionCursorIndex] = useState(0); // 0 = "New Session"
   const [selectedPanelIndex, setSelectedPanelIndex] = useState(0); // For navigating selected items
+  const [statusMessage, setStatusMessage] = useState<string | null>(null); // Brief feedback messages
 
   // Load the practice library and sessions on mount
   useEffect(() => {
@@ -96,12 +97,6 @@ export function App() {
 
   // Keyboard navigation
   useKeyboard((key) => {
-    // Return to browse from done state
-    if (state === "done") {
-      setState("browse");
-      return;
-    }
-
     if (state !== "browse") return;
 
     // Tab cycles through focus areas: list → sessions → selected → search → list
@@ -119,6 +114,67 @@ export function App() {
     if (key.name === "escape") {
       setFocusArea("list");
       return;
+    }
+
+    // Global save shortcut (works from any panel except search)
+    if (key.name === "s" && focusArea !== "search") {
+      if (selectedItems.length > 0) {
+        handleSaveSession();
+      }
+      return;
+    }
+
+    // Global refresh shortcut
+    if (key.name === "r" && focusArea !== "search") {
+      setState("loading");
+      Promise.all([fetchPracticeLibrary(), fetchPracticeSessions()])
+        .then(([items, fetchedSessions]) => {
+          setLibrary(items);
+          setFuse(
+            new Fuse(items, {
+              keys: ["name", "artist", "tags", "type"],
+              threshold: 0.4,
+            })
+          );
+          setSessions(fetchedSessions);
+          setState("browse");
+        })
+        .catch((err) => {
+          setError(`Failed to refresh: ${err.message}`);
+          setState("error");
+        });
+      return;
+    }
+
+    // Vim-style pane navigation with Ctrl+h/l
+    // Layout: [Library/Search] ↔ [Sessions] ↔ [Selected]
+    if (key.ctrl && key.name === "h") {
+      setFocusArea((f) => {
+        if (f === "selected") return "sessions";
+        if (f === "sessions") return "list";
+        return f; // list/search stay in library pane
+      });
+      return;
+    }
+    if (key.ctrl && key.name === "l") {
+      setFocusArea((f) => {
+        if (f === "list" || f === "search") return "sessions";
+        if (f === "sessions") return selectedItems.length > 0 ? "selected" : f;
+        return f; // already at rightmost
+      });
+      return;
+    }
+    // Ctrl+k to jump to search (vim "up" motion within library pane)
+    if (key.ctrl && key.name === "k") {
+      setFocusArea("search");
+      return;
+    }
+    // Ctrl+j to jump back to list from search
+    if (key.ctrl && key.name === "j") {
+      if (focusArea === "search") {
+        setFocusArea("list");
+        return;
+      }
     }
 
     // Search input mode - only allow escape
@@ -226,31 +282,6 @@ export function App() {
           }
         }
         break;
-      case "c":
-        if (selectedItems.length > 0) {
-          handleSaveSession();
-        }
-        break;
-      case "r":
-        // Refresh library and sessions
-        setState("loading");
-        Promise.all([fetchPracticeLibrary(), fetchPracticeSessions()])
-          .then(([items, fetchedSessions]) => {
-            setLibrary(items);
-            setFuse(
-              new Fuse(items, {
-                keys: ["name", "artist", "tags", "type"],
-                threshold: 0.4,
-              })
-            );
-            setSessions(fetchedSessions);
-            setState("browse");
-          })
-          .catch((err) => {
-            setError(`Failed to refresh: ${err.message}`);
-            setState("error");
-          });
-        break;
       case "/":
         // Quick shortcut to focus search
         setFocusArea("search");
@@ -295,25 +326,32 @@ export function App() {
           }
         }
 
-        // Refresh sessions and reset
+        // Refresh sessions and reload current session logs
         const fetchedSessions = await fetchPracticeSessions();
         setSessions(fetchedSessions);
-        setActiveSessionId(null);
-        setSelectedItems([]);
-        setOriginalItems([]);
-        setState("done");
+        // Reload logs so originalItems is updated for further edits
+        await loadSessionLogs(activeSessionId);
+        setState("browse");
+        setStatusMessage("Saved!");
+        setTimeout(() => setStatusMessage(null), 2000);
       } else {
         // CREATE MODE: Create new session
         const today = new Date().toISOString().split("T")[0];
         const sessionName = `Practice`;
 
-        await createFullSession(sessionName, today, selectedItems);
+        const result = await createFullSession(sessionName, today, selectedItems);
 
-        // Refresh sessions
+        // Refresh sessions and select the new session
         const fetchedSessions = await fetchPracticeSessions();
         setSessions(fetchedSessions);
-        setSelectedItems([]);
-        setState("done");
+        // Switch to the new session for continued editing
+        setActiveSessionId(result.session.id);
+        await loadSessionLogs(result.session.id);
+        // Update session cursor to point to the new session (index 1, after "New Session")
+        setSessionCursorIndex(1);
+        setState("browse");
+        setStatusMessage("Created!");
+        setTimeout(() => setStatusMessage(null), 2000);
       }
     } catch (err: any) {
       setError(`Failed to save session: ${err.message}`);
@@ -340,15 +378,6 @@ export function App() {
       <box flexDirection="column" padding={1}>
         <text fg="#ff6b6b">Error: {error}</text>
         <text fg="#888888">Press Ctrl+C to exit</text>
-      </box>
-    );
-  }
-
-  if (state === "done") {
-    return (
-      <box flexDirection="column" padding={1}>
-        <text fg="#69db7c">Session saved successfully!</text>
-        <text fg="#888888">Press any key to continue or Ctrl+C to exit</text>
       </box>
     );
   }
@@ -386,18 +415,12 @@ export function App() {
             - Editing: {activeSession.name} ({activeSession.date})
           </text>
         )}
-      </box>
-
-      {/* Search area */}
-      <box marginTop={1}>
-        <text fg="#888888">Search: </text>
-        <input
-          value={searchQuery}
-          onInput={setSearchQuery}
-          placeholder="Type to filter..."
-          focused={focusArea === "search"}
-          width={40}
-        />
+        {statusMessage && (
+          <text fg="#69db7c">
+            {" "}
+            [{statusMessage}]
+          </text>
+        )}
       </box>
 
       {/* Main content */}
@@ -407,13 +430,25 @@ export function App() {
           flexDirection="column"
           width="45%"
           borderStyle="rounded"
-          borderColor={focusArea === "list" ? "#74c0fc" : "#444444"}
+          borderColor={focusArea === "list" || focusArea === "search" ? "#74c0fc" : "#444444"}
           padding={1}
         >
           <text fg="#74c0fc">
             <b>Library</b>
             <span fg="#888888"> ({filteredItems.length})</span>
           </text>
+
+          {/* Search input inside library pane */}
+          <box marginTop={1}>
+            <text fg="#888888">/</text>
+            <input
+              value={searchQuery}
+              onInput={setSearchQuery}
+              placeholder="search..."
+              focused={focusArea === "search"}
+              width={30}
+            />
+          </box>
 
           <box flexDirection="column" marginTop={1}>
             {displayItems.map((item, idx) => {
@@ -523,7 +558,7 @@ export function App() {
           {selectedItems.length > 0 && (
             <box marginTop={2}>
               <text bg="#69db7c" fg="#000000">
-                <b> [c] {activeSessionId ? "Save" : "Create"} </b>
+                <b> [s] {activeSessionId ? "Save" : "Create"} </b>
               </text>
             </box>
           )}
@@ -533,7 +568,7 @@ export function App() {
       {/* Footer */}
       <box marginTop={1}>
         <text fg="#666666">
-          [j/k] Nav [Space] Select [Tab] Focus [+/-] Time [x] Remove [c] Save [r] Refresh
+          [j/k] Nav [Space] Select [^h/l] Pane [/] Search [+/-] Time [x] Remove [s] Save [r] Refresh
         </text>
       </box>
     </box>
