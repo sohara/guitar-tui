@@ -1,0 +1,23 @@
+{
+  "name": "guitar-tui",
+  "module": "src/index.tsx",
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.tsx",
+    "dev": "bun --watch run src/index.tsx"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^19.2.8"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@notionhq/client": "^5.6.0",
+    "@opentui/core": "^0.1.72",
+    "@opentui/react": "^0.1.72",
+    "fuse.js": "^7.1.0",
+    "react": "^19.2.3"
+  }
+}

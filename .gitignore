@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Environment variables (contains API keys)
+.env
+
+# Bun lockfile (optional, can include if you want)
+bun.lock
+
+# OS files
+.DS_Store
+
+# Editor directories
+.idea/
+.vscode/
+
+# Build output
+dist/
+
+# Claude Code settings
+.claude/
+
+# Bun binary lockfile
+bun.lockb
