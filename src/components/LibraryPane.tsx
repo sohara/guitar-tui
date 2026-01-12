@@ -2,6 +2,23 @@ import React from "react";
 import type { PracticeLibraryItem, SelectedItem } from "../notion/types";
 import type { FocusArea } from "../types";
 
+// Format a date as relative time (e.g., "3d", "2w", "3mo")
+function formatRelativeDate(dateStr: string | null): string | null {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return null; // Future date
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "1d";
+  if (diffDays < 7) return `${diffDays}d`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo`;
+  return `${Math.floor(diffDays / 365)}y`;
+}
+
 interface LibraryPaneProps {
   items: PracticeLibraryItem[];
   totalCount: number;
@@ -54,6 +71,8 @@ export function LibraryPane({
         {displayItems.map((item, idx) => {
           const isSelected = selectedItems.some((s) => s.item.id === item.id);
           const isCursor = idx === cursorIndex && focusArea === "list";
+          const lastPracticed = formatRelativeDate(item.lastPracticed);
+          const timesPracticed = item.timesPracticed;
 
           return (
             <box key={item.id}>
@@ -64,6 +83,13 @@ export function LibraryPane({
                 {isSelected ? "[x] " : "[ ] "}
                 {item.name}
                 {item.type && <span fg="#888888"> ({item.type})</span>}
+                {(lastPracticed || timesPracticed > 0) && (
+                  <span fg="#666666">
+                    {lastPracticed && ` 📅 ${lastPracticed}`}
+                    {lastPracticed && timesPracticed > 0 && <span fg="#444444"> | </span>}
+                    {timesPracticed > 0 && <span fg="#666666">🔄 {timesPracticed}</span>}
+                  </span>
+                )}
               </text>
             </box>
           );

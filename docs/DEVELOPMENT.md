@@ -166,7 +166,7 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [x] ~~Configurable planned time per item~~ (done - use +/- in selected panel)
 - [x] ~~Edit existing sessions~~ (done)
 - [x] ~~Reorder items in session~~ (done - Shift+j/k in selected panel)
-- [ ] Show item details (last practiced, times practiced)
+- [x] ~~Show item details (last practiced, times practiced)~~ (done - shown in Library pane)
 - [ ] Filter by frequency (Daily/Weekly/Monthly)
 - [ ] Filter by type (Song/Exercise/Course Lesson)
 - [ ] Scrollable list for large libraries
@@ -177,6 +177,12 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [x] ~~Edit planned time by typing exact number~~ (done - press `t` in selected panel)
 
 ## Session Log
+
+### 2026-01-12: Show Item Details in Library
+- Display last practiced date (📅 3d) and times practiced (🔄 12) with emoji
+- Pipe separator between values in dimmer color
+- Only shown when values > 0 (avoids React rendering stray `0`s)
+- Helps decide what to practice based on history
 
 ### 2026-01-12: Edit Planned Time by Typing
 - Press `t` in selected panel to enter time edit mode
