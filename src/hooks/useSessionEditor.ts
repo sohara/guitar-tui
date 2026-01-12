@@ -38,6 +38,7 @@ export interface SessionEditor {
   toggleItem: (item: PracticeLibraryItem) => void;
   adjustTime: (index: number, delta: number) => void;
   removeItem: (index: number) => void;
+  moveItem: (index: number, direction: "up" | "down") => void;
   saveSession: (
     sessions: PracticeSession[],
     setSessions: (sessions: PracticeSession[]) => void,
@@ -136,6 +137,24 @@ export function useSessionEditor(sessions: PracticeSession[]): SessionEditor {
     setSelectedPanelIndex((i) => Math.max(0, Math.min(i, selectedItems.length - 2)));
   }, [selectedItems.length]);
 
+  // Move an item up or down
+  const moveItem = useCallback((index: number, direction: "up" | "down") => {
+    setSelectedItems((current) => {
+      const newIndex = direction === "up" ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= current.length) return current;
+
+      const newItems = [...current];
+      [newItems[index], newItems[newIndex]] = [newItems[newIndex], newItems[index]];
+      return newItems;
+    });
+    // Move cursor with the item
+    setSelectedPanelIndex((i) => {
+      const newIndex = direction === "up" ? i - 1 : i + 1;
+      if (newIndex < 0 || newIndex >= selectedItems.length) return i;
+      return newIndex;
+    });
+  }, [selectedItems.length]);
+
   // Clear session state
   const clearSession = useCallback(() => {
     setActiveSessionId(null);
@@ -172,11 +191,20 @@ export function useSessionEditor(sessions: PracticeSession[]): SessionEditor {
           }
 
           // Update changed items and create new items
-          for (const item of selectedItems) {
+          for (let i = 0; i < selectedItems.length; i++) {
+            const item = selectedItems[i];
             if (item.logId) {
-              const original = originalItems.find((o) => o.logId === item.logId);
-              if (original && original.plannedMinutes !== item.plannedMinutes) {
-                await updatePracticeLog(item.logId, item.plannedMinutes);
+              // Find original position and check for changes
+              const originalIndex = originalItems.findIndex((o) => o.logId === item.logId);
+              const original = originalItems[originalIndex];
+              const timeChanged = original && original.plannedMinutes !== item.plannedMinutes;
+              const orderChanged = originalIndex !== i;
+
+              if (timeChanged || orderChanged) {
+                const updates: { plannedTime?: number; order?: number } = {};
+                if (timeChanged) updates.plannedTime = item.plannedMinutes;
+                if (orderChanged) updates.order = i;
+                await updatePracticeLog(item.logId, updates);
               }
             } else {
               await createPracticeLog({
@@ -184,6 +212,7 @@ export function useSessionEditor(sessions: PracticeSession[]): SessionEditor {
                 itemId: item.item.id,
                 sessionId: activeSessionId,
                 plannedTime: item.plannedMinutes,
+                order: i,
               });
             }
           }
@@ -237,6 +266,7 @@ export function useSessionEditor(sessions: PracticeSession[]): SessionEditor {
     toggleItem,
     adjustTime,
     removeItem,
+    moveItem,
     saveSession,
     clearSession,
   };

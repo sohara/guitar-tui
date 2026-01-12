@@ -28,6 +28,7 @@ export interface PracticeLog {
   sessionId: string;
   plannedTime: number | null;
   actualTime: number | null;
+  order: number | null;
 }
 
 // For creating new entries
@@ -41,6 +42,7 @@ export interface NewPracticeLog {
   itemId: string; // Practice Library item page ID
   sessionId: string; // Practice Session page ID
   plannedTime: number;
+  order?: number;
 }
 
 // Selection state for UI

@@ -120,7 +120,7 @@ Three panes: Library (with search), Sessions, Selected
 |------------|------|---------|
 | Library | j/k, Space | Navigate, select/deselect items |
 | Sessions | j/k, Space | Navigate, switch session |
-| Selected | j/k, +/-, x | Navigate, adjust time, remove |
+| Selected | j/k, +/-, x, J/K | Navigate, adjust time, remove, reorder |
 | Search | typing, Esc | Filter library (inside Library pane) |
 
 **Vim-style pane navigation:**
@@ -165,15 +165,25 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 
 - [x] ~~Configurable planned time per item~~ (done - use +/- in selected panel)
 - [x] ~~Edit existing sessions~~ (done)
-- [ ] Reorder items in session (Ctrl+Shift+Up/Down)
+- [x] ~~Reorder items in session~~ (done - Shift+j/k in selected panel)
 - [ ] Show item details (last practiced, times practiced)
 - [ ] Filter by frequency (Daily/Weekly/Monthly)
 - [ ] Filter by type (Song/Exercise/Course Lesson)
 - [ ] Scrollable list for large libraries
 - [ ] Session templates with preset items
 - [ ] Quick-add from recent items
+- [ ] Open item in Notion (Mac app preferred over browser)
+- [ ] Enter actual time played (edit practice log after practice)
+- [ ] Edit planned time by typing exact number (vs just +/-)
 
 ## Session Log
+
+### 2026-01-12: Item Reordering
+- Added `moveItem` function to `useSessionEditor` hook
+- Shift+j/k (or J/K) to move items up/down in selected panel
+- Cursor follows the moved item
+- Added Order property to Practice Logs database for persistence
+- Order saved/loaded via Notion API (manual drag order not accessible via API)
 
 ### 2026-01-12: Code Refactoring
 - Extracted `LibraryPane`, `SessionsPane`, `SelectedPane` components

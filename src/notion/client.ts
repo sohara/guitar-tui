@@ -155,6 +155,9 @@ export async function createPracticeLog(log: NewPracticeLog): Promise<string> {
       "Planned Time (min)": {
         number: log.plannedTime,
       },
+      Order: {
+        number: log.order ?? 0,
+      },
     },
   });
 
@@ -170,14 +173,16 @@ export async function createFullSession(
   // Create the session first
   const session = await createPracticeSession({ name: sessionName, date });
 
-  // Create all practice logs
+  // Create all practice logs with order
   const logIds: string[] = [];
-  for (const { item, plannedMinutes } of items) {
+  for (let i = 0; i < items.length; i++) {
+    const { item, plannedMinutes } = items[i];
     const logId = await createPracticeLog({
       name: item.name,
       itemId: item.id,
       sessionId: session.id,
       plannedTime: plannedMinutes,
+      order: i,
     });
     logIds.push(logId);
   }
@@ -231,6 +236,7 @@ export async function fetchPracticeLogsBySession(
         property: "Session",
         relation: { contains: sessionId },
       },
+      sorts: [{ property: "Order", direction: "ascending" }],
     } as any);
 
     for (const page of response.results) {
@@ -247,6 +253,7 @@ export async function fetchPracticeLogsBySession(
         sessionId: sessionIds[0] || "",
         plannedTime: getNumber(props["Planned Time (min)"]),
         actualTime: getNumber(props["Actual Time (min)"]),
+        order: getNumber(props.Order),
       });
     }
 
@@ -256,16 +263,21 @@ export async function fetchPracticeLogsBySession(
   return logs;
 }
 
-// Update a practice log's planned time
+// Update a practice log's planned time and/or order
 export async function updatePracticeLog(
   logId: string,
-  plannedTime: number
+  updates: { plannedTime?: number; order?: number }
 ): Promise<void> {
+  const properties: Record<string, any> = {};
+  if (updates.plannedTime !== undefined) {
+    properties["Planned Time (min)"] = { number: updates.plannedTime };
+  }
+  if (updates.order !== undefined) {
+    properties["Order"] = { number: updates.order };
+  }
   await notion.pages.update({
     page_id: logId,
-    properties: {
-      "Planned Time (min)": { number: plannedTime },
-    },
+    properties,
   });
 }
 

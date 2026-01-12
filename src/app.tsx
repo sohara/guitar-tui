@@ -39,6 +39,7 @@ export function App() {
     toggleItem,
     adjustTime,
     removeItem,
+    moveItem,
     saveSession,
     loadSessionLogs,
     selectSession,
@@ -140,6 +141,16 @@ export function App() {
 
     // Selected panel navigation
     if (focusArea === "selected") {
+      // Shift+j/k to reorder items
+      if (key.shift && (key.name === "k" || key.name === "K")) {
+        moveItem(selectedPanelIndex, "up");
+        return;
+      }
+      if (key.shift && (key.name === "j" || key.name === "J")) {
+        moveItem(selectedPanelIndex, "down");
+        return;
+      }
+
       switch (key.name) {
         case "up":
         case "k":
@@ -278,7 +289,7 @@ export function App() {
       {/* Footer */}
       <box marginTop={1}>
         <text fg="#666666">
-          [j/k] Nav [Space] Select [^h/l] Pane [/] Search [+/-] Time [x] Remove [s] Save [r] Refresh
+          [j/k] Nav [Space] Select [^h/l] Pane [/] Search [+/-] Time [J/K] Reorder [x] Remove [s] Save [r] Refresh
         </text>
       </box>
     </box>
