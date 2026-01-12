@@ -8,6 +8,8 @@ interface SelectedPaneProps {
   cursorIndex: number;
   focusArea: FocusArea;
   isEditing: boolean;
+  isEditingTime: boolean;
+  timeInputValue: string;
 }
 
 export function SelectedPane({
@@ -16,6 +18,8 @@ export function SelectedPane({
   cursorIndex,
   focusArea,
   isEditing,
+  isEditingTime,
+  timeInputValue,
 }: SelectedPaneProps) {
   const isFocused = focusArea === "selected";
 
@@ -39,13 +43,21 @@ export function SelectedPane({
       <box flexDirection="column" marginTop={1}>
         {items.map((sel, idx) => {
           const isCursor = idx === cursorIndex && isFocused;
+          const isEditingThisTime = isCursor && isEditingTime;
 
           return (
             <box key={sel.item.id}>
               <text bg={isCursor ? "#333333" : undefined} fg="#69db7c">
                 {isCursor ? "▶ " : "  "}
                 {sel.item.name}
-                <span fg="#888888"> {sel.plannedMinutes}m</span>
+                {isEditingThisTime ? (
+                  <span fg="#ffd43b" bg="#444444">
+                    {" "}
+                    [{timeInputValue || "_"}]m
+                  </span>
+                ) : (
+                  <span fg="#888888"> {sel.plannedMinutes}m</span>
+                )}
               </text>
             </box>
           );
@@ -57,6 +69,12 @@ export function SelectedPane({
           <text bg="#69db7c" fg="#000000">
             <b> [s] {isEditing ? "Save" : "Create"} </b>
           </text>
+        </box>
+      )}
+
+      {isEditingTime && (
+        <box marginTop={1}>
+          <text fg="#ffd43b">Time: type digits, Enter=ok, Esc=cancel</text>
         </box>
       )}
     </box>

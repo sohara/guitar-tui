@@ -31,6 +31,15 @@ export interface SessionEditor {
   sessionCursorIndex: number;
   setSessionCursorIndex: (index: number | ((i: number) => number)) => void;
 
+  // Time editing state
+  isEditingTime: boolean;
+  timeInputValue: string;
+  startTimeEdit: () => void;
+  appendTimeDigit: (digit: string) => void;
+  backspaceTimeDigit: () => void;
+  confirmTimeEdit: () => void;
+  cancelTimeEdit: () => void;
+
   // Actions
   setSelectedItems: (items: SelectedItem[] | ((items: SelectedItem[]) => SelectedItem[])) => void;
   selectSession: (sessionId: string | null, sessions: PracticeSession[]) => void;
@@ -56,6 +65,8 @@ export function useSessionEditor(sessions: PracticeSession[]): SessionEditor {
   const [sessionCursorIndex, setSessionCursorIndex] = useState(0);
   const [selectedPanelIndex, setSelectedPanelIndex] = useState(0);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isEditingTime, setIsEditingTime] = useState(false);
+  const [timeInputValue, setTimeInputValue] = useState("");
 
   // Get active session object
   const activeSession = activeSessionId
@@ -126,6 +137,48 @@ export function useSessionEditor(sessions: PracticeSession[]): SessionEditor {
       };
       return newItems;
     });
+  }, []);
+
+  // Time editing functions
+  const startTimeEdit = useCallback(() => {
+    if (selectedItems.length === 0) return;
+    setIsEditingTime(true);
+    setTimeInputValue("");
+  }, [selectedItems.length]);
+
+  const appendTimeDigit = useCallback((digit: string) => {
+    if (!/^[0-9]$/.test(digit)) return;
+    setTimeInputValue((v) => {
+      // Limit to 3 digits (max 999 minutes)
+      if (v.length >= 3) return v;
+      return v + digit;
+    });
+  }, []);
+
+  const backspaceTimeDigit = useCallback(() => {
+    setTimeInputValue((v) => v.slice(0, -1));
+  }, []);
+
+  const confirmTimeEdit = useCallback(() => {
+    const minutes = parseInt(timeInputValue, 10);
+    if (!isNaN(minutes) && minutes >= 1) {
+      setSelectedItems((current) => {
+        if (!current[selectedPanelIndex]) return current;
+        const newItems = [...current];
+        newItems[selectedPanelIndex] = {
+          ...newItems[selectedPanelIndex],
+          plannedMinutes: minutes,
+        };
+        return newItems;
+      });
+    }
+    setIsEditingTime(false);
+    setTimeInputValue("");
+  }, [timeInputValue, selectedPanelIndex]);
+
+  const cancelTimeEdit = useCallback(() => {
+    setIsEditingTime(false);
+    setTimeInputValue("");
   }, []);
 
   // Remove an item
@@ -260,6 +313,13 @@ export function useSessionEditor(sessions: PracticeSession[]): SessionEditor {
     setSelectedPanelIndex,
     sessionCursorIndex,
     setSessionCursorIndex,
+    isEditingTime,
+    timeInputValue,
+    startTimeEdit,
+    appendTimeDigit,
+    backspaceTimeDigit,
+    confirmTimeEdit,
+    cancelTimeEdit,
     setSelectedItems,
     selectSession,
     loadSessionLogs,

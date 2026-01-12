@@ -120,7 +120,7 @@ Three panes: Library (with search), Sessions, Selected
 |------------|------|---------|
 | Library | j/k, Space | Navigate, select/deselect items |
 | Sessions | j/k, Space | Navigate, switch session |
-| Selected | j/k, +/-, x, J/K | Navigate, adjust time, remove, reorder |
+| Selected | j/k, +/-, t, x, J/K | Navigate, adjust time, type time, remove, reorder |
 | Search | typing, Esc | Filter library (inside Library pane) |
 
 **Vim-style pane navigation:**
@@ -174,9 +174,14 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [ ] Quick-add from recent items
 - [ ] Open item in Notion (Mac app preferred over browser)
 - [ ] Enter actual time played (edit practice log after practice)
-- [ ] Edit planned time by typing exact number (vs just +/-)
+- [x] ~~Edit planned time by typing exact number~~ (done - press `t` in selected panel)
 
 ## Session Log
+
+### 2026-01-12: Edit Planned Time by Typing
+- Press `t` in selected panel to enter time edit mode
+- Type digits (1-999), Enter to confirm, Escape to cancel
+- Visual feedback shows input value with yellow highlight
 
 ### 2026-01-12: Item Reordering
 - Added `moveItem` function to `useSessionEditor` hook

@@ -36,6 +36,13 @@ export function App() {
     setSelectedPanelIndex,
     sessionCursorIndex,
     setSessionCursorIndex,
+    isEditingTime,
+    timeInputValue,
+    startTimeEdit,
+    appendTimeDigit,
+    backspaceTimeDigit,
+    confirmTimeEdit,
+    cancelTimeEdit,
     toggleItem,
     adjustTime,
     removeItem,
@@ -141,6 +148,28 @@ export function App() {
 
     // Selected panel navigation
     if (focusArea === "selected") {
+      // Time edit mode
+      if (isEditingTime) {
+        if (key.name === "return") {
+          confirmTimeEdit();
+          return;
+        }
+        if (key.name === "escape") {
+          cancelTimeEdit();
+          return;
+        }
+        if (key.name === "backspace") {
+          backspaceTimeDigit();
+          return;
+        }
+        // Handle digit keys
+        if (key.name && /^[0-9]$/.test(key.name)) {
+          appendTimeDigit(key.name);
+          return;
+        }
+        return; // Ignore other keys in time edit mode
+      }
+
       // Shift+j/k to reorder items
       if (key.shift && (key.name === "k" || key.name === "K")) {
         moveItem(selectedPanelIndex, "up");
@@ -172,6 +201,9 @@ export function App() {
         case "x":
         case "d":
           removeItem(selectedPanelIndex);
+          break;
+        case "t":
+          startTimeEdit();
           break;
       }
       return;
@@ -283,13 +315,15 @@ export function App() {
           cursorIndex={selectedPanelIndex}
           focusArea={focusArea}
           isEditing={activeSessionId !== null}
+          isEditingTime={isEditingTime}
+          timeInputValue={timeInputValue}
         />
       </box>
 
       {/* Footer */}
       <box marginTop={1}>
         <text fg="#666666">
-          [j/k] Nav [Space] Select [^h/l] Pane [/] Search [+/-] Time [J/K] Reorder [x] Remove [s] Save [r] Refresh
+          [j/k] Nav [Space] Select [^h/l] Pane [/] Search [+/-/t] Time [J/K] Reorder [x] Remove [s] Save [r] Refresh
         </text>
       </box>
     </box>
