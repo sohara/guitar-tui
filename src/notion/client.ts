@@ -3,6 +3,7 @@ import { config } from "../config";
 import type {
   PracticeLibraryItem,
   PracticeSession,
+  PracticeLog,
   NewPracticeSession,
   NewPracticeLog,
   ItemType,
@@ -69,6 +70,12 @@ function getRollup(prop: any): any {
   if (r.type === "number") return r.number;
   if (r.type === "array") return r.array;
   return null;
+}
+
+// Helper to extract relation IDs
+function getRelation(prop: any): string[] {
+  if (!prop?.relation?.length) return [];
+  return prop.relation.map((r: any) => r.id);
 }
 
 export async function fetchPracticeLibrary(): Promise<PracticeLibraryItem[]> {
@@ -176,4 +183,96 @@ export async function createFullSession(
   }
 
   return { session, logIds };
+}
+
+// Fetch recent practice sessions (sorted by date descending)
+export async function fetchPracticeSessions(): Promise<PracticeSession[]> {
+  const sessions: PracticeSession[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const response = await notion.dataSources.query({
+      data_source_id: dataSources.practiceSessions,
+      start_cursor: cursor,
+      page_size: 100,
+      sorts: [{ property: "Date", direction: "descending" }],
+    } as any);
+
+    for (const page of response.results) {
+      if (!("properties" in page)) continue;
+      const props = page.properties;
+
+      sessions.push({
+        id: page.id,
+        name: getTitle(props.Session),
+        date: getDate(props.Date) || "",
+      });
+    }
+
+    cursor = response.has_more ? response.next_cursor ?? undefined : undefined;
+  } while (cursor);
+
+  return sessions;
+}
+
+// Fetch practice logs for a specific session
+export async function fetchPracticeLogsBySession(
+  sessionId: string
+): Promise<PracticeLog[]> {
+  const logs: PracticeLog[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const response = await notion.dataSources.query({
+      data_source_id: dataSources.practiceLogs,
+      start_cursor: cursor,
+      page_size: 100,
+      filter: {
+        property: "Session",
+        relation: { contains: sessionId },
+      },
+    } as any);
+
+    for (const page of response.results) {
+      if (!("properties" in page)) continue;
+      const props = page.properties;
+
+      const itemIds = getRelation(props.Item);
+      const sessionIds = getRelation(props.Session);
+
+      logs.push({
+        id: page.id,
+        name: getTitle(props.Name),
+        itemId: itemIds[0] || "",
+        sessionId: sessionIds[0] || "",
+        plannedTime: getNumber(props["Planned Time (min)"]),
+        actualTime: getNumber(props["Actual Time (min)"]),
+      });
+    }
+
+    cursor = response.has_more ? response.next_cursor ?? undefined : undefined;
+  } while (cursor);
+
+  return logs;
+}
+
+// Update a practice log's planned time
+export async function updatePracticeLog(
+  logId: string,
+  plannedTime: number
+): Promise<void> {
+  await notion.pages.update({
+    page_id: logId,
+    properties: {
+      "Planned Time (min)": { number: plannedTime },
+    },
+  });
+}
+
+// Delete (archive) a practice log
+export async function deletePracticeLog(logId: string): Promise<void> {
+  await notion.pages.update({
+    page_id: logId,
+    archived: true,
+  });
 }
