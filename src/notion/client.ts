@@ -118,7 +118,12 @@ export async function createPracticeSession(
         date: { start: session.date },
       },
     },
-  });
+    // Use the Practice template for the linked database view
+    template: {
+      type: "template_id",
+      template_id: config.notion.templates.practiceSession,
+    },
+  } as any); // Type assertion needed as SDK types may not include template
 
   return {
     id: response.id,

@@ -17,5 +17,10 @@ export const config = {
       practiceSessions: "7c39d1ff5e2e4458be4c5cded1bc485d",
       practiceLogs: "2d7094338b1b80bf9e69fd78ecf57f44",
     },
+
+    // Template IDs
+    templates: {
+      practiceSession: "2d7094338b1b8030a56fcca068c6f46c",
+    },
   },
 };
