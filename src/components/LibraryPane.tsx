@@ -29,6 +29,9 @@ interface LibraryPaneProps {
   onSearchChange: (query: string) => void;
 }
 
+const VISIBLE_COUNT = 15;
+const SCROLL_PADDING = 3;
+
 export function LibraryPane({
   items,
   totalCount,
@@ -39,7 +42,19 @@ export function LibraryPane({
   onSearchChange,
 }: LibraryPaneProps) {
   const isFocused = focusArea === "list" || focusArea === "search";
-  const displayItems = items.slice(0, 20);
+
+  // Calculate scroll window to keep cursor visible
+  let windowStart = 0;
+  if (cursorIndex > VISIBLE_COUNT - SCROLL_PADDING - 1) {
+    windowStart = Math.min(
+      cursorIndex - (VISIBLE_COUNT - SCROLL_PADDING - 1),
+      Math.max(0, items.length - VISIBLE_COUNT)
+    );
+  }
+  const windowEnd = Math.min(windowStart + VISIBLE_COUNT, items.length);
+  const displayItems = items.slice(windowStart, windowEnd);
+  const itemsAbove = windowStart;
+  const itemsBelow = items.length - windowEnd;
 
   return (
     <box
@@ -68,9 +83,13 @@ export function LibraryPane({
 
       {/* Item list */}
       <box flexDirection="column" marginTop={1}>
+        {itemsAbove > 0 && (
+          <text fg="#666666">↑ {itemsAbove} more</text>
+        )}
         {displayItems.map((item, idx) => {
+          const actualIndex = windowStart + idx;
           const isSelected = selectedItems.some((s) => s.item.id === item.id);
-          const isCursor = idx === cursorIndex && focusArea === "list";
+          const isCursor = actualIndex === cursorIndex && focusArea === "list";
           const lastPracticed = formatRelativeDate(item.lastPracticed);
           const timesPracticed = item.timesPracticed;
 
@@ -83,19 +102,19 @@ export function LibraryPane({
                 {isSelected ? "[x] " : "[ ] "}
                 {item.name}
                 {item.type && <span fg="#888888"> ({item.type})</span>}
-                {(lastPracticed || timesPracticed > 0) && (
+                {(lastPracticed || (timesPracticed ?? 0) > 0) && (
                   <span fg="#666666">
                     {lastPracticed && ` 📅 ${lastPracticed}`}
-                    {lastPracticed && timesPracticed > 0 && <span fg="#444444"> | </span>}
-                    {timesPracticed > 0 && <span fg="#666666">🔄 {timesPracticed}</span>}
+                    {lastPracticed && (timesPracticed ?? 0) > 0 && <span fg="#444444"> | </span>}
+                    {(timesPracticed ?? 0) > 0 && <span fg="#666666">🔄 {timesPracticed}</span>}
                   </span>
                 )}
               </text>
             </box>
           );
         })}
-        {totalCount > 20 && (
-          <text fg="#666666">... +{totalCount - 20} more</text>
+        {itemsBelow > 0 && (
+          <text fg="#666666">↓ {itemsBelow} more</text>
         )}
       </box>
     </box>

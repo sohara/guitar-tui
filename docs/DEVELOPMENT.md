@@ -118,7 +118,7 @@ Three panes: Library (with search), Sessions, Selected
 
 | Focus Area | Keys | Actions |
 |------------|------|---------|
-| Library | j/k, Space | Navigate, select/deselect items |
+| Library | j/k, ^f/^b, Space | Navigate, page up/down, select/deselect |
 | Sessions | j/k, Space | Navigate, switch session |
 | Selected | j/k, +/-, t, x, J/K | Navigate, adjust time, type time, remove, reorder |
 | Search | typing, Esc | Filter library (inside Library pane) |
@@ -169,7 +169,7 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [x] ~~Show item details (last practiced, times practiced)~~ (done - shown in Library pane)
 - [ ] Filter by frequency (Daily/Weekly/Monthly)
 - [ ] Filter by type (Song/Exercise/Course Lesson)
-- [ ] Scrollable list for large libraries
+- [x] ~~Scrollable list for large libraries~~ (done - auto-scroll + Ctrl+f/b page)
 - [ ] Session templates with preset items
 - [ ] Quick-add from recent items
 - [ ] Open item in Notion (Mac app preferred over browser)
@@ -177,6 +177,11 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [x] ~~Edit planned time by typing exact number~~ (done - press `t` in selected panel)
 
 ## Session Log
+
+### 2026-01-12: Scrollable Library List
+- Auto-scrolling window of 15 items, keeps cursor 3 items from edge
+- Scroll indicators: "↑ N more" / "↓ N more"
+- Page navigation: Ctrl+f (down 12), Ctrl+b (up 12)
 
 ### 2026-01-12: Show Item Details in Library
 - Display last practiced date (📅 3d) and times practiced (🔄 12) with emoji

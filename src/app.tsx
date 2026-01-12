@@ -210,6 +210,16 @@ export function App() {
     }
 
     // Library list navigation
+    // Page up/down with Ctrl+b/f
+    if (key.ctrl && key.name === "f") {
+      setCursorIndex((i) => Math.min(filteredItems.length - 1, i + 12));
+      return;
+    }
+    if (key.ctrl && key.name === "b") {
+      setCursorIndex((i) => Math.max(0, i - 12));
+      return;
+    }
+
     switch (key.name) {
       case "up":
       case "k":
