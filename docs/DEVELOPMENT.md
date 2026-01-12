@@ -80,12 +80,20 @@ notion.pages.create({
 ### File Structure
 ```
 src/
-├── index.tsx      # Entry point, renderer setup
-├── app.tsx        # Main React component, UI and state
-├── config.ts      # Notion IDs and API key
+├── index.tsx          # Entry point, renderer setup
+├── app.tsx            # Main component, keyboard handling, layout
+├── config.ts          # Notion IDs and API key
+├── types.ts           # Shared UI types (AppState, FocusArea)
+├── components/
+│   ├── LibraryPane.tsx    # Library list with search
+│   ├── SessionsPane.tsx   # Session selector
+│   └── SelectedPane.tsx   # Selected items panel
+├── hooks/
+│   ├── useNotionData.ts      # Data fetching, search, refresh
+│   └── useSessionEditor.ts   # Selection state, save logic
 └── notion/
-    ├── client.ts  # Notion API functions
-    └── types.ts   # TypeScript interfaces
+    ├── client.ts      # Notion API functions
+    └── types.ts       # Notion data types
 ```
 
 ### Session Create/Edit Flow
@@ -166,6 +174,14 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [ ] Quick-add from recent items
 
 ## Session Log
+
+### 2026-01-12: Code Refactoring
+- Extracted `LibraryPane`, `SessionsPane`, `SelectedPane` components
+- Created `useNotionData` hook for data fetching, search, and refresh logic
+- Created `useSessionEditor` hook for selection state and save logic
+- Reduced `app.tsx` from 576 to 286 lines
+- Added shared `types.ts` for UI state types
+- Clean separation: components are presentational, hooks handle business logic
 
 ### 2026-01-12: UX Improvements
 - Fixed SIGBUS crash by upgrading Bun from 1.0.25 to 1.3.5
