@@ -4,6 +4,13 @@ import { useNotionData, useSessionEditor } from "./hooks";
 import { LibraryPane, SessionsPane, SelectedPane } from "./components";
 import type { FocusArea } from "./types";
 
+// Open a Notion page in the Notion Mac app
+function openInNotion(pageId: string) {
+  // Remove dashes from UUID for Notion URL format
+  const cleanId = pageId.replace(/-/g, "");
+  Bun.spawn(["open", `notion://notion.so/${cleanId}`]);
+}
+
 export function App() {
   const [focusArea, setFocusArea] = useState<FocusArea>("list");
   const [cursorIndex, setCursorIndex] = useState(0);
@@ -212,6 +219,11 @@ export function App() {
         case "t":
           startTimeEdit();
           break;
+        case "o":
+          if (selectedItems[selectedPanelIndex]) {
+            openInNotion(selectedItems[selectedPanelIndex].item.id);
+          }
+          break;
       }
       return;
     }
@@ -244,6 +256,11 @@ export function App() {
         break;
       case "/":
         setFocusArea("search");
+        break;
+      case "o":
+        if (filteredItems[cursorIndex]) {
+          openInNotion(filteredItems[cursorIndex].id);
+        }
         break;
     }
   });
@@ -340,7 +357,7 @@ export function App() {
       {/* Footer */}
       <box marginTop={1}>
         <text fg="#666666">
-          [j/k] Nav [Space] Select [^h/l] Pane [/] Search [+/-/t] Time [J/K] Reorder [x] Remove [s] Save [r] Refresh
+          [j/k] Nav [Space] Select [^h/l] Pane [/] Search [+/-/t] Time [J/K] Reorder [x] Remove [o] Open [s] Save [r] Refresh
         </text>
       </box>
     </box>

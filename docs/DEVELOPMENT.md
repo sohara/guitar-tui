@@ -118,9 +118,9 @@ Three panes: Library (with search), Sessions, Selected
 
 | Focus Area | Keys | Actions |
 |------------|------|---------|
-| Library | j/k, ^f/^b, Space | Navigate, page up/down, select/deselect |
+| Library | j/k, ^f/^b, Space, o | Navigate, page up/down, select/deselect, open in Notion |
 | Sessions | j/k, Space | Navigate, switch session |
-| Selected | j/k, +/-, t, x, J/K | Navigate, adjust time, type time, remove, reorder |
+| Selected | j/k, +/-, t, x, J/K, o | Navigate, adjust time, type time, remove, reorder, open in Notion |
 | Search | typing, Esc, ^w | Filter library, exit, clear search |
 
 **Vim-style pane navigation:**
@@ -172,11 +172,16 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [x] ~~Scrollable list for large libraries~~ (done - auto-scroll + Ctrl+f/b page)
 - [ ] Session templates with preset items
 - [ ] Quick-add from recent items
-- [ ] Open item in Notion (Mac app preferred over browser)
+- [x] ~~Open item in Notion (Mac app preferred over browser)~~ (done - press `o` in library or selected pane)
 - [ ] Enter actual time played (edit practice log after practice)
 - [x] ~~Edit planned time by typing exact number~~ (done - press `t` in selected panel)
 
 ## Session Log
+
+### 2026-01-12: Open Item in Notion
+- Press `o` in Library or Selected pane to open item in Notion Mac app
+- Uses `notion://` protocol to launch app instead of browser
+- UUID dashes stripped for Notion URL format compatibility
 
 ### 2026-01-12: Search Clear Shortcut
 - Ctrl+w clears search term (common terminal convention)
