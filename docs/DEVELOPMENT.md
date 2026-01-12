@@ -121,7 +121,7 @@ Three panes: Library (with search), Sessions, Selected
 | Library | j/k, ^f/^b, Space | Navigate, page up/down, select/deselect |
 | Sessions | j/k, Space | Navigate, switch session |
 | Selected | j/k, +/-, t, x, J/K | Navigate, adjust time, type time, remove, reorder |
-| Search | typing, Esc | Filter library (inside Library pane) |
+| Search | typing, Esc, ^w | Filter library, exit, clear search |
 
 **Vim-style pane navigation:**
 - `Ctrl+h` - Move to pane on the left
@@ -177,6 +177,9 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [x] ~~Edit planned time by typing exact number~~ (done - press `t` in selected panel)
 
 ## Session Log
+
+### 2026-01-12: Search Clear Shortcut
+- Ctrl+w clears search term (common terminal convention)
 
 ### 2026-01-12: Scrollable Library List
 - Auto-scrolling window of 15 items, keeps cursor 3 items from edge

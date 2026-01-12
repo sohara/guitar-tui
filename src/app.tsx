@@ -116,8 +116,15 @@ export function App() {
       }
     }
 
-    // Search input mode - only allow escape
-    if (focusArea === "search") return;
+    // Search input mode
+    if (focusArea === "search") {
+      // Ctrl+w clears search
+      if (key.ctrl && key.name === "w") {
+        setSearchQuery("");
+        return;
+      }
+      return;
+    }
 
     // Sessions panel navigation
     if (focusArea === "sessions") {
