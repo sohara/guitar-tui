@@ -88,21 +88,34 @@ src/
     └── types.ts   # TypeScript interfaces
 ```
 
-### Session Creation Flow
-1. User selects items from Practice Library
-2. Press `c` to create session
-3. `createFullSession()` is called:
-   - Creates Practice Session page (using template for linked view)
-   - Creates Practice Log entries for each selected item
-   - Logs are linked to both the Session and the Library item
+### Session Create/Edit Flow
 
-### Keyboard Handling
-Two focus modes: `search` and `list`. Shortcuts only trigger when in `list` mode to prevent typing conflicts.
+**Create New Session:**
+1. Select "New Session" in Sessions panel (default)
+2. Select items from Practice Library
+3. Press `c` to create session
+4. `createFullSession()` creates session + all logs
 
-```typescript
-// In useKeyboard handler:
-if (focusArea === "search") return; // Don't trigger shortcuts when typing
-```
+**Edit Existing Session:**
+1. Navigate to Sessions panel (Tab)
+2. Select an existing session
+3. Logs are loaded into the Selected panel
+4. Add/remove items, adjust times
+5. Press `c` to save changes
+6. Delta detection: only changed items are updated
+
+### Focus Areas & Keyboard Navigation
+
+Four focus areas cycle with Tab: `list` → `sessions` → `selected` → `search`
+
+| Focus Area | Keys | Actions |
+|------------|------|---------|
+| Library | j/k, Space | Navigate, select/deselect items |
+| Sessions | j/k, Space | Navigate, switch session |
+| Selected | j/k, +/-, x | Navigate, adjust time, remove |
+| Search | typing | Filter library |
+
+Global: `Tab` (cycle focus), `Esc` (return to library), `c` (save), `r` (refresh)
 
 ### Search
 - Uses Fuse.js for fuzzy matching on name, artist, tags, type
@@ -116,11 +129,8 @@ OpenTUI crashes with SIGBUS inside tmux. Workaround: run outside tmux.
 - GitHub issue: https://github.com/anomalyco/opentui/issues/490
 - Tried `useThread: false` but didn't help
 
-### Hardcoded Planned Time
-Currently all selected items default to 5 minutes. Future improvement: allow setting per-item time.
-
 ### No Pagination in UI
-Shows max 20 items in the list. Works fine for typical library sizes but could add scrolling.
+Shows max 20 items in library list, 10 sessions. Works fine for typical sizes but could add scrolling.
 
 ## Environment Setup
 
@@ -133,7 +143,9 @@ Shows max 20 items in the list. Works fine for typical library sizes but could a
 
 ## Future Ideas
 
-- [ ] Configurable planned time per item (currently hardcoded to 5 min)
+- [x] ~~Configurable planned time per item~~ (done - use +/- in selected panel)
+- [x] ~~Edit existing sessions~~ (done)
+- [ ] Reorder items in session (Ctrl+Shift+Up/Down)
 - [ ] Show item details (last practiced, times practiced)
 - [ ] Filter by frequency (Daily/Weekly/Monthly)
 - [ ] Filter by type (Song/Exercise/Course Lesson)
@@ -142,6 +154,15 @@ Shows max 20 items in the list. Works fine for typical library sizes but could a
 - [ ] Quick-add from recent items
 
 ## Session Log
+
+### 2026-01-12: Session Editing Feature
+- Added session selector panel showing recent sessions
+- Implemented edit flow: select session → modify items → save
+- Added Notion API functions: `fetchPracticeSessions`, `fetchPracticeLogsBySession`, `updatePracticeLog`, `deletePracticeLog`
+- Delta detection on save: only creates/updates/deletes changed items
+- Four-panel focus navigation with Tab cycling
+- Time adjustment with +/- keys in selected panel
+- Remove items with x key
 
 ### 2026-01-12: Initial Development
 - Set up project with Bun and OpenTUI
