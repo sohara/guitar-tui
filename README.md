@@ -59,6 +59,6 @@ The app connects to three related Notion databases:
 
 ## Tech Stack
 
-- [OpenTUI](https://github.com/anthropics/opentui) — Terminal UI framework with React reconciler
+- [OpenTUI](https://github.com/anomalyco/opentui) — Terminal UI framework with React reconciler
 - [Notion SDK](https://github.com/makenotion/notion-sdk-js) — Official Notion API client
 - [Fuse.js](https://fusejs.io/) — Fuzzy search
