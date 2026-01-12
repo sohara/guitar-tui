@@ -2,6 +2,14 @@ import React from "react";
 import type { SelectedItem } from "../notion/types";
 import type { FocusArea } from "../types";
 
+// Format decimal minutes as M:SS
+function formatActualTime(decimalMinutes: number): string {
+  const totalSeconds = Math.round(decimalMinutes * 60);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 interface SelectedPaneProps {
   items: SelectedItem[];
   totalMinutes: number;
@@ -22,6 +30,8 @@ export function SelectedPane({
   timeInputValue,
 }: SelectedPaneProps) {
   const isFocused = focusArea === "selected";
+  const totalActual = items.reduce((sum, i) => sum + (i.actualMinutes || 0), 0);
+  const completedCount = items.filter((i) => i.actualMinutes !== undefined && i.actualMinutes > 0).length;
 
   return (
     <box
@@ -36,7 +46,17 @@ export function SelectedPane({
         <b>{isEditing ? "Edit" : "New"}</b>
         <span fg="#888888">
           {" "}
-          ({items.length}) {totalMinutes}m
+          ({completedCount}/{items.length})
+          {" "}
+          {totalActual > 0 ? (
+            <span>
+              <span fg="#69db7c">{formatActualTime(totalActual)}</span>
+              <span fg="#666666">/</span>
+              {totalMinutes}m
+            </span>
+          ) : (
+            <span>{totalMinutes}m</span>
+          )}
         </span>
       </text>
 
@@ -44,19 +64,33 @@ export function SelectedPane({
         {items.map((sel, idx) => {
           const isCursor = idx === cursorIndex && isFocused;
           const isEditingThisTime = isCursor && isEditingTime;
+          const isCompleted = sel.actualMinutes !== undefined && sel.actualMinutes > 0;
 
           return (
             <box key={sel.item.id}>
-              <text bg={isCursor ? "#333333" : undefined} fg="#69db7c">
-                {isCursor ? "▶ " : "  "}
-                {sel.item.name}
+              <text bg={isCursor ? "#333333" : undefined}>
+                {/* Status indicator */}
+                <span fg={isCompleted ? "#69db7c" : "#666666"}>
+                  {isCursor ? "▶" : isCompleted ? "✓" : " "}
+                </span>
+                {" "}
+                {/* Item name */}
+                <span fg={isCompleted ? "#69db7c" : "#ffffff"}>
+                  {sel.item.name}
+                </span>
+                {" "}
+                {/* Time display */}
                 {isEditingThisTime ? (
                   <span fg="#ffd43b" bg="#444444">
-                    {" "}
                     [{timeInputValue || "_"}]m
                   </span>
                 ) : (
-                  <span fg="#888888"> {sel.plannedMinutes}m</span>
+                  <span fg="#888888">
+                    {sel.plannedMinutes}m
+                    {isCompleted && sel.actualMinutes !== undefined && (
+                      <span fg="#69db7c"> → {formatActualTime(sel.actualMinutes)}</span>
+                    )}
+                  </span>
                 )}
               </text>
             </box>

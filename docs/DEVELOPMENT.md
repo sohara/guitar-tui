@@ -120,8 +120,9 @@ Three panes: Library (with search), Sessions, Selected
 |------------|------|---------|
 | Library | j/k, ^f/^b, Space, o | Navigate, page up/down, select/deselect, open in Notion |
 | Sessions | j/k, Space | Navigate, switch session |
-| Selected | j/k, +/-, t, x, J/K, o | Navigate, adjust time, type time, remove, reorder, open in Notion |
+| Selected | j/k, +/-, t, x, J/K, o, p | Navigate, adjust time, type time, remove, reorder, open, practice |
 | Search | typing, Esc, ^w | Filter library, exit, clear search |
+| Practice | Space, Enter, y/n, Esc | Pause/resume, finish, confirm save, cancel |
 
 **Vim-style pane navigation:**
 - `Ctrl+h` - Move to pane on the left
@@ -173,10 +174,19 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [ ] Session templates with preset items
 - [ ] Quick-add from recent items
 - [x] ~~Open item in Notion (Mac app preferred over browser)~~ (done - press `o` in library or selected pane)
-- [ ] Enter actual time played (edit practice log after practice)
+- [x] ~~Enter actual time played~~ (done - practice timer with `p` key)
 - [x] ~~Edit planned time by typing exact number~~ (done - press `t` in selected panel)
 
 ## Session Log
+
+### 2026-01-12: Practice Timer
+- Press `p` in Selected pane to start practice timer for an item
+- Full-screen practice mode with big ASCII art timer display
+- Space to pause/resume, Enter to finish (with y/n confirmation), Esc to cancel
+- Stores actual time as decimal minutes in Notion for second-level precision
+- Resumable: pressing `p` again continues from previous actual time
+- Selected pane shows completion status (✓), planned time, and actual time (MM:SS format)
+- Header shows completed count and total actual/planned time
 
 ### 2026-01-12: Open Item in Notion
 - Press `o` in Library or Selected pane to open item in Notion Mac app

@@ -263,14 +263,17 @@ export async function fetchPracticeLogsBySession(
   return logs;
 }
 
-// Update a practice log's planned time and/or order
+// Update a practice log's planned time, actual time, and/or order
 export async function updatePracticeLog(
   logId: string,
-  updates: { plannedTime?: number; order?: number }
+  updates: { plannedTime?: number; actualTime?: number; order?: number }
 ): Promise<void> {
   const properties: Record<string, any> = {};
   if (updates.plannedTime !== undefined) {
     properties["Planned Time (min)"] = { number: updates.plannedTime };
+  }
+  if (updates.actualTime !== undefined) {
+    properties["Actual Time (min)"] = { number: updates.actualTime };
   }
   if (updates.order !== undefined) {
     properties["Order"] = { number: updates.order };

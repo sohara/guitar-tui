@@ -49,5 +49,6 @@ export interface NewPracticeLog {
 export interface SelectedItem {
   item: PracticeLibraryItem;
   plannedMinutes: number;
+  actualMinutes?: number; // Actual time practiced (from practice timer)
   logId?: string; // Present when editing existing log, absent for new items
 }

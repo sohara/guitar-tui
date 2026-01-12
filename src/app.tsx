@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useKeyboard } from "@opentui/react";
 import { useNotionData, useSessionEditor } from "./hooks";
-import { LibraryPane, SessionsPane, SelectedPane } from "./components";
-import type { FocusArea } from "./types";
+import { LibraryPane, SessionsPane, SelectedPane, PracticeMode } from "./components";
+import { updatePracticeLog } from "./notion/client";
+import type { FocusArea, PracticeState } from "./types";
 
 // Open a Notion page in the Notion Mac app
 function openInNotion(pageId: string) {
@@ -14,6 +15,7 @@ function openInNotion(pageId: string) {
 export function App() {
   const [focusArea, setFocusArea] = useState<FocusArea>("list");
   const [cursorIndex, setCursorIndex] = useState(0);
+  const [practiceState, setPracticeState] = useState<PracticeState | null>(null);
 
   // Data fetching and search
   const data = useNotionData();
@@ -38,6 +40,7 @@ export function App() {
     activeSessionId,
     activeSession,
     statusMessage,
+    setStatusMessage,
     totalMinutes,
     selectedPanelIndex,
     setSelectedPanelIndex,
@@ -60,8 +63,140 @@ export function App() {
     clearSession,
   } = editor;
 
+  // Practice mode helpers
+  const startPractice = (itemIndex: number) => {
+    const item = selectedItems[itemIndex];
+    // Resume from existing actual time if any (convert minutes to ms)
+    const existingMs = item?.actualMinutes ? item.actualMinutes * 60 * 1000 : 0;
+    setPracticeState({
+      itemIndex,
+      startTime: Date.now(),
+      accumulatedMs: existingMs,
+      isPaused: false,
+      isConfirming: false,
+    });
+    setState("practicing");
+  };
+
+  const togglePausePractice = () => {
+    if (!practiceState) return;
+    if (practiceState.isPaused) {
+      // Resume: set new start time
+      setPracticeState({
+        ...practiceState,
+        startTime: Date.now(),
+        isPaused: false,
+      });
+    } else {
+      // Pause: accumulate elapsed time
+      const elapsed = Date.now() - practiceState.startTime;
+      setPracticeState({
+        ...practiceState,
+        accumulatedMs: practiceState.accumulatedMs + elapsed,
+        isPaused: true,
+      });
+    }
+  };
+
+  const requestStopPractice = () => {
+    if (!practiceState) return;
+    // Pause first if running, then show confirmation
+    if (!practiceState.isPaused) {
+      const elapsed = Date.now() - practiceState.startTime;
+      setPracticeState({
+        ...practiceState,
+        accumulatedMs: practiceState.accumulatedMs + elapsed,
+        isPaused: true,
+        isConfirming: true,
+      });
+    } else {
+      setPracticeState({
+        ...practiceState,
+        isConfirming: true,
+      });
+    }
+  };
+
+  const confirmSavePractice = async () => {
+    if (!practiceState) return;
+    const item = selectedItems[practiceState.itemIndex];
+    if (!item?.logId) {
+      // Can't save if no log ID (item not yet saved to Notion)
+      cancelPractice();
+      return;
+    }
+
+    // Store as decimal minutes for second-level precision
+    const actualMinutes = practiceState.accumulatedMs / 60000;
+    const displayMinutes = Math.floor(actualMinutes);
+    const displaySeconds = Math.floor((practiceState.accumulatedMs % 60000) / 1000);
+    setState("saving");
+    try {
+      await updatePracticeLog(item.logId, { actualTime: actualMinutes });
+      // Reload session logs to reflect the change
+      if (activeSessionId) {
+        await loadSessionLogs(activeSessionId, library);
+      }
+      setState("browse");
+      setStatusMessage(`Saved ${displayMinutes}:${displaySeconds.toString().padStart(2, "0")}!`);
+      setTimeout(() => setStatusMessage(null), 2000);
+    } catch (err: any) {
+      setError(`Failed to save: ${err.message}`);
+      setState("error");
+    }
+    setPracticeState(null);
+  };
+
+  const cancelConfirmPractice = () => {
+    if (!practiceState) return;
+    setPracticeState({
+      ...practiceState,
+      isConfirming: false,
+    });
+  };
+
+  const cancelPractice = () => {
+    setPracticeState(null);
+    setState("browse");
+  };
+
   // Keyboard navigation
   useKeyboard((key) => {
+    // Practice mode keyboard handling
+    if (state === "practicing" && practiceState) {
+      if (practiceState.isConfirming) {
+        // Confirmation mode: y/n
+        if (key.name === "y") {
+          confirmSavePractice();
+          return;
+        }
+        if (key.name === "n") {
+          cancelConfirmPractice();
+          return;
+        }
+        if (key.name === "escape") {
+          cancelPractice();
+          return;
+        }
+        return; // Ignore other keys in confirmation
+      }
+
+      // Normal practice mode
+      if (key.name === "space") {
+        togglePausePractice();
+        return;
+      }
+      if (key.name === "return") {
+        requestStopPractice();
+        return;
+      }
+      if (key.name === "escape") {
+        cancelPractice();
+        return;
+      }
+      return; // Ignore other keys in practice mode
+    }
+
     if (state !== "browse") return;
 
     // Tab cycles through focus areas
@@ -224,6 +359,12 @@ export function App() {
             openInNotion(selectedItems[selectedPanelIndex].item.id);
           }
           break;
+        case "p":
+          // Only allow practice if item has been saved (has logId)
+          if (selectedItems[selectedPanelIndex]?.logId) {
+            startPractice(selectedPanelIndex);
+          }
+          break;
       }
       return;
     }
@@ -293,6 +434,16 @@ export function App() {
     );
   }
 
+  // Practicing state
+  if (state === "practicing" && practiceState) {
+    const practiceItem = selectedItems[practiceState.itemIndex];
+    if (practiceItem) {
+      return (
+        <PracticeMode item={practiceItem} practiceState={practiceState} />
+      );
+    }
+  }
+
   // Saving state
   if (state === "saving") {
     return (
@@ -357,7 +508,7 @@ export function App() {
       {/* Footer */}
       <box marginTop={1}>
         <text fg="#666666">
-          [j/k] Nav [Space] Select [^h/l] Pane [/] Search [+/-/t] Time [J/K] Reorder [x] Remove [o] Open [s] Save [r] Refresh
+          [j/k] Nav [Space] Select [^h/l] Pane [/] Search [+/-/t] Time [J/K] Reorder [x] Remove [o] Open [p] Practice [s] Save [r] Refresh
         </text>
       </box>
     </box>

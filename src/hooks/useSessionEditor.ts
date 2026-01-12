@@ -21,6 +21,7 @@ export interface SessionEditor {
   activeSessionId: string | null;
   activeSession: PracticeSession | null;
   statusMessage: string | null;
+  setStatusMessage: (message: string | null) => void;
   totalMinutes: number;
 
   // Cursor state for selected panel
@@ -90,6 +91,7 @@ export function useSessionEditor(sessions: PracticeSession[]): SessionEditor {
           items.push({
             item: libraryItem,
             plannedMinutes: log.plannedTime || 5,
+            actualMinutes: log.actualTime ?? undefined,
             logId: log.id,
           });
         }
@@ -308,6 +310,7 @@ export function useSessionEditor(sessions: PracticeSession[]): SessionEditor {
     activeSessionId,
     activeSession,
     statusMessage,
+    setStatusMessage,
     totalMinutes,
     selectedPanelIndex,
     setSelectedPanelIndex,
