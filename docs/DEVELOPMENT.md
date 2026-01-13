@@ -204,7 +204,7 @@ The core problem: deciding what to practice is hard for beginner/intermediate pl
 
 **Proposed UX:**
 - Sort: `1` name, `2` last practiced, `3` times practiced. Same key reverses direction.
-- Default sort: last practiced (direction TBD - descending = recent first, ascending = needs practice first)
+- Default sort: last practiced descending (most recent first - active material is more relevant)
 - Type filter: `f` cycles All → Songs → Exercises → Lessons → All
 - Header shows state: `Library (45/129) Songs ↓LastPracticed`
 
