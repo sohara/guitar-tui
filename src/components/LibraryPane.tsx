@@ -1,6 +1,6 @@
 import React from "react";
-import type { PracticeLibraryItem, SelectedItem } from "../notion/types";
-import type { FocusArea } from "../types";
+import type { PracticeLibraryItem, SelectedItem, ItemType } from "../notion/types";
+import type { FocusArea, SortField } from "../types";
 
 // Format a date as relative time (e.g., "3d", "2w", "3mo")
 function formatRelativeDate(dateStr: string | null): string | null {
@@ -27,6 +27,18 @@ interface LibraryPaneProps {
   focusArea: FocusArea;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  sortField: SortField;
+  sortAsc: boolean;
+  typeFilter: ItemType | null;
+}
+
+// Format sort field for display
+function formatSortField(field: SortField): string {
+  switch (field) {
+    case "name": return "Name";
+    case "lastPracticed": return "Last";
+    case "timesPracticed": return "Times";
+  }
 }
 
 const VISIBLE_COUNT = 15;
@@ -40,6 +52,9 @@ export function LibraryPane({
   focusArea,
   searchQuery,
   onSearchChange,
+  sortField,
+  sortAsc,
+  typeFilter,
 }: LibraryPaneProps) {
   const isFocused = focusArea === "list" || focusArea === "search";
 
@@ -66,7 +81,11 @@ export function LibraryPane({
     >
       <text fg="#74c0fc">
         <b>Library</b>
-        <span fg="#888888"> ({totalCount})</span>
+        <span fg="#888888">
+          {" "}({items.length}{typeFilter ? `/${totalCount}` : ""})
+          {typeFilter && <span fg="#ffa94d"> {typeFilter}s</span>}
+          {" "}{sortAsc ? "↑" : "↓"}{formatSortField(sortField)}
+        </span>
       </text>
 
       {/* Search input */}

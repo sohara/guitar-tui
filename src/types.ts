@@ -3,6 +3,9 @@
 export type AppState = "loading" | "browse" | "creating" | "saving" | "error" | "practicing";
 export type FocusArea = "search" | "list" | "sessions" | "selected";
 
+// Sort/filter types
+export type SortField = "name" | "lastPracticed" | "timesPracticed";
+
 // Practice mode state
 export interface PracticeState {
   itemIndex: number;      // Index in selectedItems

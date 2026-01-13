@@ -27,6 +27,11 @@ export function App() {
     searchQuery,
     setSearchQuery,
     filteredItems,
+    sortField,
+    sortAsc,
+    typeFilter,
+    cycleSortField,
+    cycleTypeFilter,
     refresh,
     setSessions,
     setState,
@@ -403,6 +408,24 @@ export function App() {
           openInNotion(filteredItems[cursorIndex].id);
         }
         break;
+      // Sort keys
+      case "1":
+        cycleSortField("name");
+        setCursorIndex(0);
+        break;
+      case "2":
+        cycleSortField("lastPracticed");
+        setCursorIndex(0);
+        break;
+      case "3":
+        cycleSortField("timesPracticed");
+        setCursorIndex(0);
+        break;
+      // Type filter
+      case "f":
+        cycleTypeFilter();
+        setCursorIndex(0);
+        break;
     }
   });
 
@@ -479,12 +502,15 @@ export function App() {
       <box flexDirection="row" flexGrow={1} marginTop={1}>
         <LibraryPane
           items={filteredItems}
-          totalCount={filteredItems.length}
+          totalCount={library.length}
           selectedItems={selectedItems}
           cursorIndex={cursorIndex}
           focusArea={focusArea}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          sortField={sortField}
+          sortAsc={sortAsc}
+          typeFilter={typeFilter}
         />
 
         <SessionsPane
@@ -508,7 +534,7 @@ export function App() {
       {/* Footer */}
       <box marginTop={1}>
         <text fg="#666666">
-          [j/k] Nav [Space] Select [^h/l] Pane [/] Search [+/-/t] Time [J/K] Reorder [x] Remove [o] Open [p] Practice [s] Save [r] Refresh
+          [j/k] Nav [Space] Select [/] Search [1/2/3] Sort [f] Filter [o] Open [p] Practice [s] Save [r] Refresh
         </text>
       </box>
     </box>

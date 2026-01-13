@@ -118,11 +118,11 @@ Three panes: Library (with search), Sessions, Selected
 
 | Focus Area | Keys | Actions |
 |------------|------|---------|
-| Library | j/k, ^f/^b, Space, o | Navigate, page up/down, select/deselect, open in Notion |
+| Library | j/k, ^f/^b, Space, o, 1/2/3, f | Navigate, page, select, open, sort, filter |
 | Sessions | j/k, Space | Navigate, switch session |
-| Selected | j/k, +/-, t, x, J/K, o, p | Navigate, adjust time, type time, remove, reorder, open, practice |
+| Selected | j/k, +/-, t, x, J/K, o, p | Navigate, time, remove, reorder, open, practice |
 | Search | typing, Esc, ^w | Filter library, exit, clear search |
-| Practice | Space, Enter, y/n, Esc | Pause/resume, finish, confirm save, cancel |
+| Practice | Space, Enter, y/n, Esc | Pause/resume, finish, confirm, cancel |
 
 **Vim-style pane navigation:**
 - `Ctrl+h` - Move to pane on the left
@@ -168,8 +168,8 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [x] ~~Edit existing sessions~~ (done)
 - [x] ~~Reorder items in session~~ (done - Shift+j/k in selected panel)
 - [x] ~~Show item details (last practiced, times practiced)~~ (done - shown in Library pane)
-- [ ] Filter by type (Song/Exercise/Course Lesson) - `f` cycles through types
-- [ ] Sort library by name, last practiced, times practiced - `1/2/3` keys, same key reverses
+- [x] ~~Filter by type (Song/Exercise/Course Lesson)~~ (done - `f` cycles through types)
+- [x] ~~Sort library by name, last practiced, times practiced~~ (done - `1/2/3` keys, same key reverses)
 - [x] ~~Scrollable list for large libraries~~ (done - auto-scroll + Ctrl+f/b page)
 - [ ] Session templates / smart session builder (see Ideas below)
 - [ ] Quick-add from recent / "due" items (see Ideas below)
@@ -211,6 +211,14 @@ The core problem: deciding what to practice is hard for beginner/intermediate pl
 **Architecture note:** Consider refactoring to per-screen keybindings. Currently one big `useKeyboard` with focus area branches. Each pane owning its bindings would be cleaner and easier to extend.
 
 ## Session Log
+
+### 2026-01-12: Sort and Filter
+- Sort library: `1` name, `2` last practiced, `3` times practiced
+- Same key reverses direction (↑/↓ shown in header)
+- Default sort: last practiced descending (most recent first)
+- Type filter: `f` cycles All → Songs → Exercises → Lessons → All
+- Header shows: `Library (45/129) Songs ↓Last`
+- Pipeline: Type Filter → Search Filter → Sort
 
 ### 2026-01-12: Practice Timer
 - Press `p` in Selected pane to start practice timer for an item
