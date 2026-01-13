@@ -1,9 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useKeyboard } from "@opentui/react";
 import { useNotionData, useSessionEditor } from "./hooks";
-import { LibraryPane, SessionsPane, SelectedPane, PracticeMode } from "./components";
+import {
+  LibraryPane,
+  SessionsPane,
+  SelectedPane,
+  PracticeMode,
+  createLibraryKeyHandler,
+  createSearchKeyHandler,
+  createSessionsKeyHandler,
+  createSelectedKeyHandler,
+  createPracticeKeyHandler,
+  LIBRARY_HINTS,
+  SEARCH_HINTS,
+  SESSIONS_HINTS,
+  SELECTED_HINTS,
+  TIME_EDIT_HINTS,
+} from "./components";
 import { updatePracticeLog } from "./notion/client";
-import type { FocusArea, PracticeState } from "./types";
+import type { FocusArea, PracticeState, KeyEvent } from "./types";
+
+// Global keyboard hints (always shown)
+const GLOBAL_HINTS = "[Tab] Panes [s] Save [r] Refresh";
 
 // Open a Notion page in the Notion Mac app
 function openInNotion(pageId: string) {
@@ -165,44 +183,68 @@ export function App() {
     setState("browse");
   };
 
-  // Keyboard navigation
-  useKeyboard((key) => {
-    // Practice mode keyboard handling
-    if (state === "practicing" && practiceState) {
-      if (practiceState.isConfirming) {
-        // Confirmation mode: y/n
-        if (key.name === "y") {
-          confirmSavePractice();
-          return;
-        }
-        if (key.name === "n") {
-          cancelConfirmPractice();
-          return;
-        }
-        if (key.name === "escape") {
-          cancelPractice();
-          return;
-        }
-        return; // Ignore other keys in confirmation
-      }
+  // Create keyboard handlers for each pane
+  const libraryHandler = useMemo(() => createLibraryKeyHandler({
+    cursorIndex,
+    setCursorIndex,
+    filteredItems,
+    toggleItem,
+    setFocusArea,
+    cycleSortField,
+    cycleTypeFilter,
+    openInNotion,
+  }), [cursorIndex, filteredItems, toggleItem, cycleSortField, cycleTypeFilter]);
 
-      // Normal practice mode
-      if (key.name === "space") {
-        togglePausePractice();
-        return;
-      }
-      if (key.name === "return") {
-        requestStopPractice();
-        return;
-      }
-      if (key.name === "escape") {
-        cancelPractice();
-        return;
-      }
-      return; // Ignore other keys in practice mode
+  const searchHandler = useMemo(() => createSearchKeyHandler({
+    setSearchQuery,
+  }), [setSearchQuery]);
+
+  const sessionsHandler = useMemo(() => createSessionsKeyHandler({
+    cursorIndex: sessionCursorIndex,
+    setCursorIndex: setSessionCursorIndex,
+    sessions,
+    clearSession,
+    selectSession,
+    loadSessionLogs,
+    library,
+  }), [sessionCursorIndex, sessions, clearSession, selectSession, loadSessionLogs, library]);
+
+  const selectedHandler = useMemo(() => createSelectedKeyHandler({
+    cursorIndex: selectedPanelIndex,
+    setCursorIndex: setSelectedPanelIndex,
+    selectedItems,
+    adjustTime,
+    removeItem,
+    moveItem,
+    startTimeEdit,
+    openInNotion,
+    startPractice,
+    isEditingTime,
+    confirmTimeEdit,
+    cancelTimeEdit,
+    backspaceTimeDigit,
+    appendTimeDigit,
+  }), [selectedPanelIndex, selectedItems, adjustTime, removeItem, moveItem, startTimeEdit, startPractice, isEditingTime, confirmTimeEdit, cancelTimeEdit, backspaceTimeDigit, appendTimeDigit]);
+
+  // Keyboard navigation
+  useKeyboard((key: KeyEvent) => {
+    // Practice mode - full screen takeover
+    if (state === "practicing" && practiceState) {
+      const practiceHandler = createPracticeKeyHandler({
+        practiceState,
+        togglePause: togglePausePractice,
+        requestStop: requestStopPractice,
+        confirmSave: confirmSavePractice,
+        cancelConfirm: cancelConfirmPractice,
+        cancel: cancelPractice,
+      });
+      practiceHandler(key);
+      return;
     }
 
     if (state !== "browse") return;
+
+    // Global shortcuts
 
     // Tab cycles through focus areas
     if (key.name === "tab") {
@@ -215,13 +257,13 @@ export function App() {
       return;
     }
 
-    // Escape returns to list
-    if (key.name === "escape") {
+    // Escape returns to list (unless in search, then delegate)
+    if (key.name === "escape" && focusArea !== "search") {
       setFocusArea("list");
       return;
     }
 
-    // Global save shortcut
+    // Save shortcut (not in search mode)
     if (key.name === "s" && focusArea !== "search") {
       if (selectedItems.length > 0) {
         saveSession(sessions, setSessions, setState, setError, library);
@@ -229,13 +271,13 @@ export function App() {
       return;
     }
 
-    // Global refresh shortcut
+    // Refresh shortcut (not in search mode)
     if (key.name === "r" && focusArea !== "search") {
       refresh();
       return;
     }
 
-    // Vim-style pane navigation
+    // Vim-style pane navigation (Ctrl+h/l/k/j)
     if (key.ctrl && key.name === "h") {
       setFocusArea((f) => {
         if (f === "selected") return "sessions";
@@ -256,177 +298,19 @@ export function App() {
       setFocusArea("search");
       return;
     }
-    if (key.ctrl && key.name === "j") {
-      if (focusArea === "search") {
-        setFocusArea("list");
-        return;
-      }
-    }
-
-    // Search input mode
-    if (focusArea === "search") {
-      // Ctrl+w clears search
-      if (key.ctrl && key.name === "w") {
-        setSearchQuery("");
-        return;
-      }
+    if (key.ctrl && key.name === "j" && focusArea === "search") {
+      setFocusArea("list");
       return;
     }
 
-    // Sessions panel navigation
-    if (focusArea === "sessions") {
-      switch (key.name) {
-        case "up":
-        case "k":
-          setSessionCursorIndex((i) => Math.max(0, i - 1));
-          break;
-        case "down":
-        case "j":
-          setSessionCursorIndex((i) => Math.min(sessions.length, i + 1));
-          break;
-        case "space":
-        case "return":
-          if (sessionCursorIndex === 0) {
-            clearSession();
-          } else {
-            const session = sessions[sessionCursorIndex - 1];
-            if (session) {
-              selectSession(session.id, sessions);
-              loadSessionLogs(session.id, library);
-            }
-          }
-          break;
-      }
-      return;
-    }
-
-    // Selected panel navigation
-    if (focusArea === "selected") {
-      // Time edit mode
-      if (isEditingTime) {
-        if (key.name === "return") {
-          confirmTimeEdit();
-          return;
-        }
-        if (key.name === "escape") {
-          cancelTimeEdit();
-          return;
-        }
-        if (key.name === "backspace") {
-          backspaceTimeDigit();
-          return;
-        }
-        // Handle digit keys
-        if (key.name && /^[0-9]$/.test(key.name)) {
-          appendTimeDigit(key.name);
-          return;
-        }
-        return; // Ignore other keys in time edit mode
-      }
-
-      // Shift+j/k to reorder items
-      if (key.shift && (key.name === "k" || key.name === "K")) {
-        moveItem(selectedPanelIndex, "up");
-        return;
-      }
-      if (key.shift && (key.name === "j" || key.name === "J")) {
-        moveItem(selectedPanelIndex, "down");
-        return;
-      }
-
-      switch (key.name) {
-        case "up":
-        case "k":
-          setSelectedPanelIndex((i) => Math.max(0, i - 1));
-          break;
-        case "down":
-        case "j":
-          setSelectedPanelIndex((i) => Math.min(selectedItems.length - 1, i + 1));
-          break;
-        case "=":
-        case "+":
-        case "]":
-          adjustTime(selectedPanelIndex, 1);
-          break;
-        case "-":
-        case "[":
-          adjustTime(selectedPanelIndex, -1);
-          break;
-        case "x":
-        case "d":
-          removeItem(selectedPanelIndex);
-          break;
-        case "t":
-          startTimeEdit();
-          break;
-        case "o":
-          if (selectedItems[selectedPanelIndex]) {
-            openInNotion(selectedItems[selectedPanelIndex].item.id);
-          }
-          break;
-        case "p":
-          // Only allow practice if item has been saved (has logId)
-          if (selectedItems[selectedPanelIndex]?.logId) {
-            startPractice(selectedPanelIndex);
-          }
-          break;
-      }
-      return;
-    }
-
-    // Library list navigation
-    // Page up/down with Ctrl+b/f
-    if (key.ctrl && key.name === "f") {
-      setCursorIndex((i) => Math.min(filteredItems.length - 1, i + 12));
-      return;
-    }
-    if (key.ctrl && key.name === "b") {
-      setCursorIndex((i) => Math.max(0, i - 12));
-      return;
-    }
-
-    switch (key.name) {
-      case "up":
-      case "k":
-        setCursorIndex((i) => Math.max(0, i - 1));
-        break;
-      case "down":
-      case "j":
-        setCursorIndex((i) => Math.min(filteredItems.length - 1, i + 1));
-        break;
-      case "space":
-      case "return":
-        if (filteredItems[cursorIndex]) {
-          toggleItem(filteredItems[cursorIndex]);
-        }
-        break;
-      case "/":
-        setFocusArea("search");
-        break;
-      case "o":
-        if (filteredItems[cursorIndex]) {
-          openInNotion(filteredItems[cursorIndex].id);
-        }
-        break;
-      // Sort keys
-      case "1":
-        cycleSortField("name");
-        setCursorIndex(0);
-        break;
-      case "2":
-        cycleSortField("lastPracticed");
-        setCursorIndex(0);
-        break;
-      case "3":
-        cycleSortField("timesPracticed");
-        setCursorIndex(0);
-        break;
-      // Type filter
-      case "f":
-        cycleTypeFilter();
-        setCursorIndex(0);
-        break;
-    }
+    // Delegate to focused pane handler
+    const handlers: Record<FocusArea, (key: KeyEvent) => boolean> = {
+      list: libraryHandler,
+      search: searchHandler,
+      sessions: sessionsHandler,
+      selected: selectedHandler,
+    };
+    handlers[focusArea]?.(key);
   });
 
   // Loading state
@@ -531,10 +415,15 @@ export function App() {
         />
       </box>
 
-      {/* Footer */}
+      {/* Footer - contextual hints based on focused pane */}
       <box marginTop={1}>
         <text fg="#666666">
-          [j/k] Nav [Space] Select [/] Search [1/2/3] Sort [f] Filter [o] Open [p] Practice [s] Save [r] Refresh
+          {focusArea === "list" && LIBRARY_HINTS}
+          {focusArea === "search" && SEARCH_HINTS}
+          {focusArea === "sessions" && SESSIONS_HINTS}
+          {focusArea === "selected" && (isEditingTime ? TIME_EDIT_HINTS : SELECTED_HINTS)}
+          {" | "}
+          {GLOBAL_HINTS}
         </text>
       </box>
     </box>

@@ -1,6 +1,109 @@
 import React from "react";
 import type { PracticeLibraryItem, SelectedItem, ItemType } from "../notion/types";
-import type { FocusArea, SortField } from "../types";
+import type { FocusArea, SortField, KeyEvent, KeyHandler } from "../types";
+
+// Keyboard hints
+export const LIBRARY_HINTS = "[j/k] Nav [Space] Select [/] Search [1/2/3] Sort [f] Filter [o] Open";
+export const SEARCH_HINTS = "[Enter] Done [Esc] Exit [Ctrl+w] Clear";
+
+// Library keyboard handler params
+interface LibraryKeyParams {
+  cursorIndex: number;
+  setCursorIndex: React.Dispatch<React.SetStateAction<number>>;
+  filteredItems: PracticeLibraryItem[];
+  toggleItem: (item: PracticeLibraryItem) => void;
+  setFocusArea: React.Dispatch<React.SetStateAction<FocusArea>>;
+  cycleSortField: (field: SortField) => void;
+  cycleTypeFilter: () => void;
+  openInNotion: (pageId: string) => void;
+}
+
+export function createLibraryKeyHandler(params: LibraryKeyParams): KeyHandler {
+  const {
+    cursorIndex,
+    setCursorIndex,
+    filteredItems,
+    toggleItem,
+    setFocusArea,
+    cycleSortField,
+    cycleTypeFilter,
+    openInNotion,
+  } = params;
+
+  return (key: KeyEvent): boolean => {
+    // Page up/down with Ctrl+f/b
+    if (key.ctrl && key.name === "f") {
+      setCursorIndex((i) => Math.min(filteredItems.length - 1, i + 12));
+      return true;
+    }
+    if (key.ctrl && key.name === "b") {
+      setCursorIndex((i) => Math.max(0, i - 12));
+      return true;
+    }
+
+    switch (key.name) {
+      case "up":
+      case "k":
+        setCursorIndex((i) => Math.max(0, i - 1));
+        return true;
+      case "down":
+      case "j":
+        setCursorIndex((i) => Math.min(filteredItems.length - 1, i + 1));
+        return true;
+      case "space":
+      case "return":
+        if (filteredItems[cursorIndex]) {
+          toggleItem(filteredItems[cursorIndex]);
+        }
+        return true;
+      case "/":
+        setFocusArea("search");
+        return true;
+      case "o":
+        if (filteredItems[cursorIndex]) {
+          openInNotion(filteredItems[cursorIndex].id);
+        }
+        return true;
+      // Sort keys
+      case "1":
+        cycleSortField("name");
+        setCursorIndex(0);
+        return true;
+      case "2":
+        cycleSortField("lastPracticed");
+        setCursorIndex(0);
+        return true;
+      case "3":
+        cycleSortField("timesPracticed");
+        setCursorIndex(0);
+        return true;
+      // Type filter
+      case "f":
+        cycleTypeFilter();
+        setCursorIndex(0);
+        return true;
+    }
+    return false;
+  };
+}
+
+// Search input keyboard handler params
+interface SearchKeyParams {
+  setSearchQuery: (query: string) => void;
+}
+
+export function createSearchKeyHandler(params: SearchKeyParams): KeyHandler {
+  const { setSearchQuery } = params;
+
+  return (key: KeyEvent): boolean => {
+    // Ctrl+w clears search
+    if (key.ctrl && key.name === "w") {
+      setSearchQuery("");
+      return true;
+    }
+    return false;
+  };
+}
 
 // Format a date as relative time (e.g., "3d", "2w", "3mo")
 function formatRelativeDate(dateStr: string | null): string | null {

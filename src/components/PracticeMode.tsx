@@ -1,6 +1,61 @@
 import React, { useState, useEffect } from "react";
 import type { SelectedItem } from "../notion/types";
-import type { PracticeState } from "../types";
+import type { PracticeState, KeyEvent, KeyHandler } from "../types";
+
+// Practice mode keyboard handler params
+interface PracticeKeyParams {
+  practiceState: PracticeState;
+  togglePause: () => void;
+  requestStop: () => void;
+  confirmSave: () => void;
+  cancelConfirm: () => void;
+  cancel: () => void;
+}
+
+export function createPracticeKeyHandler(params: PracticeKeyParams): KeyHandler {
+  const {
+    practiceState,
+    togglePause,
+    requestStop,
+    confirmSave,
+    cancelConfirm,
+    cancel,
+  } = params;
+
+  return (key: KeyEvent): boolean => {
+    if (practiceState.isConfirming) {
+      // Confirmation mode: y/n
+      if (key.name === "y") {
+        confirmSave();
+        return true;
+      }
+      if (key.name === "n") {
+        cancelConfirm();
+        return true;
+      }
+      if (key.name === "escape") {
+        cancel();
+        return true;
+      }
+      return true; // Consume all keys in confirmation mode
+    }
+
+    // Normal practice mode
+    if (key.name === "space") {
+      togglePause();
+      return true;
+    }
+    if (key.name === "return") {
+      requestStop();
+      return true;
+    }
+    if (key.name === "escape") {
+      cancel();
+      return true;
+    }
+    return true; // Consume all keys in practice mode
+  };
+}
 
 interface PracticeModeProps {
   item: SelectedItem;

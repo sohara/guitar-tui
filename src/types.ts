@@ -3,6 +3,15 @@
 export type AppState = "loading" | "browse" | "creating" | "saving" | "error" | "practicing";
 export type FocusArea = "search" | "list" | "sessions" | "selected";
 
+// Keyboard handling types
+export interface KeyEvent {
+  name: string;
+  ctrl?: boolean;
+  shift?: boolean;
+}
+
+export type KeyHandler = (key: KeyEvent) => boolean; // true if handled
+
 // Sort/filter types
 export type SortField = "name" | "lastPracticed" | "timesPracticed";
 

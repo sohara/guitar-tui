@@ -1,6 +1,58 @@
 import React from "react";
-import type { PracticeSession } from "../notion/types";
-import type { FocusArea } from "../types";
+import type { PracticeSession, PracticeLibraryItem } from "../notion/types";
+import type { FocusArea, KeyEvent, KeyHandler } from "../types";
+
+// Keyboard hints
+export const SESSIONS_HINTS = "[j/k] Nav [Space] Select";
+
+// Sessions keyboard handler params
+interface SessionsKeyParams {
+  cursorIndex: number;
+  setCursorIndex: React.Dispatch<React.SetStateAction<number>>;
+  sessions: PracticeSession[];
+  clearSession: () => void;
+  selectSession: (id: string, sessions: PracticeSession[]) => void;
+  loadSessionLogs: (id: string, library: PracticeLibraryItem[]) => void;
+  library: PracticeLibraryItem[];
+}
+
+export function createSessionsKeyHandler(params: SessionsKeyParams): KeyHandler {
+  const {
+    cursorIndex,
+    setCursorIndex,
+    sessions,
+    clearSession,
+    selectSession,
+    loadSessionLogs,
+    library,
+  } = params;
+
+  return (key: KeyEvent): boolean => {
+    switch (key.name) {
+      case "up":
+      case "k":
+        setCursorIndex((i) => Math.max(0, i - 1));
+        return true;
+      case "down":
+      case "j":
+        setCursorIndex((i) => Math.min(sessions.length, i + 1));
+        return true;
+      case "space":
+      case "return":
+        if (cursorIndex === 0) {
+          clearSession();
+        } else {
+          const session = sessions[cursorIndex - 1];
+          if (session) {
+            selectSession(session.id, sessions);
+            loadSessionLogs(session.id, library);
+          }
+        }
+        return true;
+    }
+    return false;
+  };
+}
 
 interface SessionsPaneProps {
   sessions: PracticeSession[];
