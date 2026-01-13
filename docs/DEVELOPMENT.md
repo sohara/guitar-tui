@@ -168,14 +168,47 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [x] ~~Edit existing sessions~~ (done)
 - [x] ~~Reorder items in session~~ (done - Shift+j/k in selected panel)
 - [x] ~~Show item details (last practiced, times practiced)~~ (done - shown in Library pane)
-- [ ] Filter by frequency (Daily/Weekly/Monthly)
-- [ ] Filter by type (Song/Exercise/Course Lesson)
+- [ ] Filter by type (Song/Exercise/Course Lesson) - `f` cycles through types
+- [ ] Sort library by name, last practiced, times practiced - `1/2/3` keys, same key reverses
 - [x] ~~Scrollable list for large libraries~~ (done - auto-scroll + Ctrl+f/b page)
-- [ ] Session templates with preset items
-- [ ] Quick-add from recent items
-- [x] ~~Open item in Notion (Mac app preferred over browser)~~ (done - press `o` in library or selected pane)
-- [x] ~~Enter actual time played~~ (done - practice timer with `p` key)
-- [x] ~~Edit planned time by typing exact number~~ (done - press `t` in selected panel)
+- [ ] Session templates / smart session builder (see Ideas below)
+- [ ] Quick-add from recent / "due" items (see Ideas below)
+- [ ] Refactor to per-screen keybindings (cleaner than global switch statement)
+
+## Ideas: What Should I Practice?
+
+*Captured 2026-01-12 - not yet ready to implement*
+
+The core problem: deciding what to practice is hard for beginner/intermediate players.
+- Too many things to learn, limited time
+- Need balance between fun (songs) and fundamentals (technique)
+- Some things need daily repetition, others occasional review
+- Easy to avoid hard/boring stuff or forget things entirely
+- Want progress (requires consistency) but also variety (to stay engaged)
+
+**Potential approaches:**
+
+1. **"Due for practice" view** - Show items where time since `Last Practiced` exceeds some threshold. Lightweight spaced repetition without manual tagging. Could derive urgency from `Times Practiced` (new items need more frequent practice) or `Type` (exercises more often than songs).
+
+2. **Smart session builder** - "Build me a 30-minute session" that automatically picks a balanced mix of items based on type, last practiced, and available time.
+
+3. **Templates as starting points** - "Weekday Quick" (15min, technique-focused) vs "Weekend Deep" (45min, includes songs). Not rigid, just scaffolding.
+
+**Design constraint:** Avoid relying on manually-managed properties like `Frequency` or `Current` - these add friction and tend to go stale. Prefer deriving recommendations from practice history (Last Practiced, Times Practiced) and item Type.
+
+## Ideas: Filter/Sort UX
+
+*Captured 2026-01-12*
+
+**Pipeline:** All Items → Type Filter → Search Filter → Sort → Display
+
+**Proposed UX:**
+- Sort: `1` name, `2` last practiced, `3` times practiced. Same key reverses direction.
+- Default sort: last practiced (direction TBD - descending = recent first, ascending = needs practice first)
+- Type filter: `f` cycles All → Songs → Exercises → Lessons → All
+- Header shows state: `Library (45/129) Songs ↓LastPracticed`
+
+**Architecture note:** Consider refactoring to per-screen keybindings. Currently one big `useKeyboard` with focus area branches. Each pane owning its bindings would be cleaner and easier to extend.
 
 ## Session Log
 
