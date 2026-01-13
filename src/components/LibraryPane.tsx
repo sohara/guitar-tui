@@ -188,7 +188,7 @@ export function LibraryPane({
   return (
     <box
       flexDirection="column"
-      width="45%"
+      width="55%"
       borderStyle="rounded"
       borderColor={isFocused ? "#74c0fc" : "#444444"}
       padding={1}

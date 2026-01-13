@@ -86,8 +86,9 @@ src/
 ├── types.ts           # Shared UI types (AppState, FocusArea)
 ├── components/
 │   ├── LibraryPane.tsx    # Library list with search
-│   ├── SessionsPane.tsx   # Session selector
-│   └── SelectedPane.tsx   # Selected items panel
+│   ├── SessionPicker.tsx  # Session dropdown overlay
+│   ├── SelectedPane.tsx   # Selected items panel
+│   └── PracticeMode.tsx   # Full-screen practice timer
 ├── hooks/
 │   ├── useNotionData.ts      # Data fetching, search, refresh
 │   └── useSessionEditor.ts   # Selection state, save logic
@@ -114,14 +115,14 @@ src/
 
 ### Focus Areas & Keyboard Navigation
 
-Three panes: Library (with search), Sessions, Selected
+Two-pane layout: Library (55%) + Selected (45%), with session picker as dropdown overlay.
 
 | Focus Area | Keys | Actions |
 |------------|------|---------|
 | Library | j/k, ^f/^b, Space, o, 1/2/3, f | Navigate, page, select, open, sort, filter |
-| Sessions | j/k, Space | Navigate, switch session |
 | Selected | j/k, +/-, t, x, J/K, o, p | Navigate, time, remove, reorder, open, practice |
 | Search | typing, Esc, ^w | Filter library, exit, clear search |
+| Session Picker | j/k, Enter, Esc | Navigate, select session, cancel |
 | Practice | Space, Enter, y/n, Esc | Pause/resume, finish, confirm, cancel |
 
 **Vim-style pane navigation:**
@@ -131,9 +132,10 @@ Three panes: Library (with search), Sessions, Selected
 - `Ctrl+j` - Jump from search back to list
 
 **Other shortcuts:**
-- `Tab` - Cycle focus through all areas
-- `Esc` - Return to library list
+- `Tab` - Cycle focus: list → selected → search
+- `Esc` - Return to library list (or close session picker)
 - `/` - Quick jump to search
+- `e` - Open session picker dropdown
 - `s` - Save session
 - `r` - Refresh data from Notion
 
@@ -173,7 +175,7 @@ Shows max 20 items in library list, 10 sessions. Works fine for typical sizes bu
 - [x] ~~Scrollable list for large libraries~~ (done - auto-scroll + Ctrl+f/b page)
 - [ ] Session templates / smart session builder (see Ideas below)
 - [ ] Quick-add from recent / "due" items (see Ideas below)
-- [ ] Refactor to per-screen keybindings (cleaner than global switch statement)
+- [x] ~~Refactor to per-screen keybindings~~ (done - each pane has own handler)
 
 ## Ideas: What Should I Practice?
 
@@ -211,6 +213,15 @@ The core problem: deciding what to practice is hard for beginner/intermediate pl
 **Architecture note:** Consider refactoring to per-screen keybindings. Currently one big `useKeyboard` with focus area branches. Each pane owning its bindings would be cleaner and easier to extend.
 
 ## Session Log
+
+### 2026-01-12: Session Picker Dropdown
+- Replaced three-pane layout with two-pane layout (Library 55%, Selected 45%)
+- Sessions pane converted to dropdown overlay accessible via `e` key
+- Header shows current session: `Session: 2026-01-12` or `Session: New`
+- Session picker appears as overlay with j/k navigation, Enter to select, Esc to cancel
+- Tab now cycles: list → selected → search (skips session picker)
+- Global hints updated: `[Tab] Panes [e] Sessions [s] Save [r] Refresh`
+- Frees up horizontal space for main workflow (Library ↔ Selected Items)
 
 ### 2026-01-12: Sort and Filter
 - Sort library: `1` name, `2` last practiced, `3` times practiced

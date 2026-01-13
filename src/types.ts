@@ -1,7 +1,7 @@
 // UI state types
 
 export type AppState = "loading" | "browse" | "creating" | "saving" | "error" | "practicing";
-export type FocusArea = "search" | "list" | "sessions" | "selected";
+export type FocusArea = "search" | "list" | "sessionPicker" | "selected";
 
 // Keyboard handling types
 export interface KeyEvent {

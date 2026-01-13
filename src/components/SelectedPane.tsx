@@ -151,7 +151,7 @@ export function SelectedPane({
   return (
     <box
       flexDirection="column"
-      width="35%"
+      width="45%"
       borderStyle="rounded"
       borderColor={isFocused ? "#74c0fc" : "#ffa94d"}
       padding={1}

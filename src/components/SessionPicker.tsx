@@ -1,12 +1,12 @@
 import React from "react";
 import type { PracticeSession, PracticeLibraryItem } from "../notion/types";
-import type { FocusArea, KeyEvent, KeyHandler } from "../types";
+import type { KeyEvent, KeyHandler } from "../types";
 
 // Keyboard hints
-export const SESSIONS_HINTS = "[j/k] Nav [Space] Select";
+export const SESSION_PICKER_HINTS = "[j/k] Nav [Enter] Select [Esc] Cancel";
 
-// Sessions keyboard handler params
-interface SessionsKeyParams {
+// Session picker keyboard handler params
+interface SessionPickerKeyParams {
   cursorIndex: number;
   setCursorIndex: React.Dispatch<React.SetStateAction<number>>;
   sessions: PracticeSession[];
@@ -14,9 +14,10 @@ interface SessionsKeyParams {
   selectSession: (id: string, sessions: PracticeSession[]) => void;
   loadSessionLogs: (id: string, library: PracticeLibraryItem[]) => void;
   library: PracticeLibraryItem[];
+  onClose: () => void;
 }
 
-export function createSessionsKeyHandler(params: SessionsKeyParams): KeyHandler {
+export function createSessionPickerKeyHandler(params: SessionPickerKeyParams): KeyHandler {
   const {
     cursorIndex,
     setCursorIndex,
@@ -25,6 +26,7 @@ export function createSessionsKeyHandler(params: SessionsKeyParams): KeyHandler 
     selectSession,
     loadSessionLogs,
     library,
+    onClose,
   } = params;
 
   return (key: KeyEvent): boolean => {
@@ -48,56 +50,57 @@ export function createSessionsKeyHandler(params: SessionsKeyParams): KeyHandler 
             loadSessionLogs(session.id, library);
           }
         }
+        onClose();
+        return true;
+      case "escape":
+        onClose();
         return true;
     }
     return false;
   };
 }
 
-interface SessionsPaneProps {
+interface SessionPickerProps {
   sessions: PracticeSession[];
   activeSessionId: string | null;
   cursorIndex: number;
-  focusArea: FocusArea;
 }
 
-export function SessionsPane({
+export function SessionPicker({
   sessions,
   activeSessionId,
   cursorIndex,
-  focusArea,
-}: SessionsPaneProps) {
-  const isFocused = focusArea === "sessions";
+}: SessionPickerProps) {
   const displaySessions = sessions.slice(0, 10);
 
   return (
     <box
       flexDirection="column"
-      width="20%"
+      width={30}
       borderStyle="rounded"
-      borderColor={isFocused ? "#74c0fc" : "#444444"}
+      borderColor="#74c0fc"
       padding={1}
-      marginLeft={1}
+      marginTop={1}
     >
       <text fg="#b197fc">
-        <b>Sessions</b>
+        <b>Select Session</b>
       </text>
 
       <box flexDirection="column" marginTop={1}>
         {/* New Session option */}
         <box>
           <text
-            bg={cursorIndex === 0 && isFocused ? "#333333" : undefined}
+            bg={cursorIndex === 0 ? "#333333" : undefined}
             fg={activeSessionId === null ? "#69db7c" : "#ffffff"}
           >
-            {activeSessionId === null ? "▶ " : "  "}New Session
+            {cursorIndex === 0 ? "▶ " : "  "}New Session
           </text>
         </box>
 
         {/* Existing sessions */}
         {displaySessions.map((session, idx) => {
           const isActive = activeSessionId === session.id;
-          const isCursor = idx + 1 === cursorIndex && isFocused;
+          const isCursor = idx + 1 === cursorIndex;
 
           return (
             <box key={session.id}>
@@ -105,8 +108,9 @@ export function SessionsPane({
                 bg={isCursor ? "#333333" : undefined}
                 fg={isActive ? "#69db7c" : "#888888"}
               >
-                {isActive ? "▶ " : "  "}
+                {isCursor ? "▶ " : "  "}
                 {session.date}
+                {isActive && " (current)"}
               </text>
             </box>
           );

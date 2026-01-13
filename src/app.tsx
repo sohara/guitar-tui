@@ -3,17 +3,17 @@ import { useKeyboard } from "@opentui/react";
 import { useNotionData, useSessionEditor } from "./hooks";
 import {
   LibraryPane,
-  SessionsPane,
+  SessionPicker,
   SelectedPane,
   PracticeMode,
   createLibraryKeyHandler,
   createSearchKeyHandler,
-  createSessionsKeyHandler,
+  createSessionPickerKeyHandler,
   createSelectedKeyHandler,
   createPracticeKeyHandler,
   LIBRARY_HINTS,
   SEARCH_HINTS,
-  SESSIONS_HINTS,
+  SESSION_PICKER_HINTS,
   SELECTED_HINTS,
   TIME_EDIT_HINTS,
 } from "./components";
@@ -21,7 +21,7 @@ import { updatePracticeLog } from "./notion/client";
 import type { FocusArea, PracticeState, KeyEvent } from "./types";
 
 // Global keyboard hints (always shown)
-const GLOBAL_HINTS = "[Tab] Panes [s] Save [r] Refresh";
+const GLOBAL_HINTS = "[Tab] Panes [e] Sessions [s] Save [r] Refresh";
 
 // Open a Notion page in the Notion Mac app
 function openInNotion(pageId: string) {
@@ -199,7 +199,10 @@ export function App() {
     setSearchQuery,
   }), [setSearchQuery]);
 
-  const sessionsHandler = useMemo(() => createSessionsKeyHandler({
+  // Close session picker and return to list
+  const closeSessionPicker = () => setFocusArea("list");
+
+  const sessionPickerHandler = useMemo(() => createSessionPickerKeyHandler({
     cursorIndex: sessionCursorIndex,
     setCursorIndex: setSessionCursorIndex,
     sessions,
@@ -207,6 +210,7 @@ export function App() {
     selectSession,
     loadSessionLogs,
     library,
+    onClose: closeSessionPicker,
   }), [sessionCursorIndex, sessions, clearSession, selectSession, loadSessionLogs, library]);
 
   const selectedHandler = useMemo(() => createSelectedKeyHandler({
@@ -246,55 +250,64 @@ export function App() {
 
     // Global shortcuts
 
-    // Tab cycles through focus areas
-    if (key.name === "tab") {
+    // Tab cycles through focus areas (skip sessionPicker - it's a modal)
+    if (key.name === "tab" && focusArea !== "sessionPicker") {
       setFocusArea((f) => {
-        if (f === "list") return "sessions";
-        if (f === "sessions") return selectedItems.length > 0 ? "selected" : "search";
+        if (f === "list") return selectedItems.length > 0 ? "selected" : "search";
         if (f === "selected") return "search";
         return "list";
       });
       return;
     }
 
-    // Escape returns to list (unless in search, then delegate)
-    if (key.name === "escape" && focusArea !== "search") {
-      setFocusArea("list");
+    // Escape returns to list (closes session picker if open)
+    if (key.name === "escape") {
+      if (focusArea === "sessionPicker") {
+        setFocusArea("list");
+        return;
+      }
+      if (focusArea !== "search") {
+        setFocusArea("list");
+        return;
+      }
+    }
+
+    // Open session picker with 'e' (not in search or sessionPicker)
+    if (key.name === "e" && focusArea !== "search" && focusArea !== "sessionPicker") {
+      setFocusArea("sessionPicker");
       return;
     }
 
-    // Save shortcut (not in search mode)
-    if (key.name === "s" && focusArea !== "search") {
+    // Save shortcut (not in search or sessionPicker mode)
+    if (key.name === "s" && focusArea !== "search" && focusArea !== "sessionPicker") {
       if (selectedItems.length > 0) {
         saveSession(sessions, setSessions, setState, setError, library);
       }
       return;
     }
 
-    // Refresh shortcut (not in search mode)
-    if (key.name === "r" && focusArea !== "search") {
+    // Refresh shortcut (not in search or sessionPicker mode)
+    if (key.name === "r" && focusArea !== "search" && focusArea !== "sessionPicker") {
       refresh();
       return;
     }
 
-    // Vim-style pane navigation (Ctrl+h/l/k/j)
-    if (key.ctrl && key.name === "h") {
+    // Vim-style pane navigation (Ctrl+h/l) - now just list ↔ selected
+    if (key.ctrl && key.name === "h" && focusArea !== "sessionPicker") {
       setFocusArea((f) => {
-        if (f === "selected") return "sessions";
-        if (f === "sessions") return "list";
+        if (f === "selected") return "list";
         return f;
       });
       return;
     }
-    if (key.ctrl && key.name === "l") {
+    if (key.ctrl && key.name === "l" && focusArea !== "sessionPicker") {
       setFocusArea((f) => {
-        if (f === "list" || f === "search") return "sessions";
-        if (f === "sessions") return selectedItems.length > 0 ? "selected" : f;
+        if (f === "list" || f === "search") return selectedItems.length > 0 ? "selected" : f;
         return f;
       });
       return;
     }
-    if (key.ctrl && key.name === "k") {
+    if (key.ctrl && key.name === "k" && focusArea !== "sessionPicker") {
       setFocusArea("search");
       return;
     }
@@ -307,7 +320,7 @@ export function App() {
     const handlers: Record<FocusArea, (key: KeyEvent) => boolean> = {
       list: libraryHandler,
       search: searchHandler,
-      sessions: sessionsHandler,
+      sessionPicker: sessionPickerHandler,
       selected: selectedHandler,
     };
     handlers[focusArea]?.(key);
@@ -363,26 +376,32 @@ export function App() {
   // Main browse UI
   return (
     <box flexDirection="column" height="100%" padding={1}>
-      {/* Header */}
+      {/* Header with session selector */}
       <box>
         <text fg="#ffd43b">
-          <b>Guitar Practice Session Builder</b>
+          <b>Guitar Practice</b>
         </text>
-        {activeSession && (
-          <text fg="#74c0fc">
-            {" "}
-            - Editing: {activeSession.name} ({activeSession.date})
-          </text>
-        )}
+        <text fg="#888888"> │ </text>
+        <text fg="#74c0fc">
+          Session: {activeSession?.date ?? "New"}
+        </text>
         {statusMessage && (
           <text fg="#69db7c">
-            {" "}
-            [{statusMessage}]
+            {" "}[{statusMessage}]
           </text>
         )}
       </box>
 
-      {/* Main content */}
+      {/* Session picker dropdown (overlay) */}
+      {focusArea === "sessionPicker" && (
+        <SessionPicker
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          cursorIndex={sessionCursorIndex}
+        />
+      )}
+
+      {/* Main content - two panes */}
       <box flexDirection="row" flexGrow={1} marginTop={1}>
         <LibraryPane
           items={filteredItems}
@@ -395,13 +414,6 @@ export function App() {
           sortField={sortField}
           sortAsc={sortAsc}
           typeFilter={typeFilter}
-        />
-
-        <SessionsPane
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          cursorIndex={sessionCursorIndex}
-          focusArea={focusArea}
         />
 
         <SelectedPane
@@ -420,7 +432,7 @@ export function App() {
         <text fg="#666666">
           {focusArea === "list" && LIBRARY_HINTS}
           {focusArea === "search" && SEARCH_HINTS}
-          {focusArea === "sessions" && SESSIONS_HINTS}
+          {focusArea === "sessionPicker" && SESSION_PICKER_HINTS}
           {focusArea === "selected" && (isEditingTime ? TIME_EDIT_HINTS : SELECTED_HINTS)}
           {" | "}
           {GLOBAL_HINTS}
