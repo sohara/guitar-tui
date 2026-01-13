@@ -135,13 +135,24 @@ interface LibraryPaneProps {
   typeFilter: ItemType | null;
 }
 
-// Format sort field for display
-function formatSortField(field: SortField): string {
-  switch (field) {
-    case "name": return "Name";
-    case "lastPracticed": return "Last";
-    case "timesPracticed": return "Times";
-  }
+// Sort option component
+function SortOption({
+  label,
+  keyNum,
+  isActive,
+  sortAsc
+}: {
+  label: string;
+  keyNum: number;
+  isActive: boolean;
+  sortAsc: boolean;
+}) {
+  const arrow = isActive ? (sortAsc ? "↑" : "↓") : "";
+  return (
+    <span fg={isActive ? "#74c0fc" : "#666666"}>
+      [{keyNum}]{label}{arrow}
+    </span>
+  );
 }
 
 const VISIBLE_COUNT = 15;
@@ -187,9 +198,16 @@ export function LibraryPane({
         <span fg="#888888">
           {" "}({items.length}{typeFilter ? `/${totalCount}` : ""})
           {typeFilter && <span fg="#ffa94d"> {typeFilter}s</span>}
-          {" "}{sortAsc ? "↑" : "↓"}{formatSortField(sortField)}
         </span>
       </text>
+      {/* Sort options */}
+      <box>
+        <SortOption label="Name" keyNum={1} isActive={sortField === "name"} sortAsc={sortAsc} />
+        <text fg="#444444"> </text>
+        <SortOption label="Last Practiced" keyNum={2} isActive={sortField === "lastPracticed"} sortAsc={sortAsc} />
+        <text fg="#444444"> </text>
+        <SortOption label="Times Practiced" keyNum={3} isActive={sortField === "timesPracticed"} sortAsc={sortAsc} />
+      </box>
 
       {/* Search input */}
       <box marginTop={1}>
