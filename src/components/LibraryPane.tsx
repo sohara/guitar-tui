@@ -201,13 +201,13 @@ export function LibraryPane({
         </span>
       </text>
       {/* Sort options */}
-      <box>
+      <text>
         <SortOption label="Name" keyNum={1} isActive={sortField === "name"} sortAsc={sortAsc} />
-        <text fg="#444444"> </text>
+        <span fg="#444444"> </span>
         <SortOption label="Last Practiced" keyNum={2} isActive={sortField === "lastPracticed"} sortAsc={sortAsc} />
-        <text fg="#444444"> </text>
+        <span fg="#444444"> </span>
         <SortOption label="Times Practiced" keyNum={3} isActive={sortField === "timesPracticed"} sortAsc={sortAsc} />
-      </box>
+      </text>
 
       {/* Search input */}
       <box marginTop={1}>
